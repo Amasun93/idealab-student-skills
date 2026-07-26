@@ -1,4 +1,0 @@
-interface:
-  display_name: "学生研究日志"
-  short_description: "通过口述采访生成每日研究日志、回答记录和视频讲述提纲，方便老师拍摄"
-  default_prompt: "使用 $student-research-log 帮我复盘今天的学习，并保存研究日志。"

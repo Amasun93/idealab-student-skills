@@ -1,0 +1,4 @@
+interface:
+  display_name: "学生课堂项目助手"
+  short_description: "帮助学生在课堂中建立项目档案、整理材料并完成每日研究日志"
+  default_prompt: "使用 $idealab-student-skills 帮我整理课堂项目，或者记录今天的研究日志。"
