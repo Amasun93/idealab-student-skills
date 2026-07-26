@@ -1,0 +1,4 @@
+interface:
+  display_name: "学生项目归档"
+  short_description: "通过口述安全创建、整理和交接学生个人项目文件夹，减少打字与误操作"
+  default_prompt: "使用 $student-project-archive 帮我创建项目档案，并安全归档今天的材料。"
