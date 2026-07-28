@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ideaLab Classroom Deck",
+  "type": "object",
+  "required": ["schema_version", "deck_type", "meta", "slides"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "deck_type": { "enum": ["d3-opening", "d7-final"] },
+    "meta": {
+      "type": "object",
+      "required": ["student_name", "project_title", "output_name"],
+      "properties": {
+        "student_name": { "type": "string", "minLength": 1, "maxLength": 30 },
+        "grade": { "type": "string", "maxLength": 20 },
+        "project_title": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "one_sentence": { "type": "string", "maxLength": 120 },
+        "output_name": { "type": "string", "minLength": 1, "maxLength": 80 }
+      },
+      "additionalProperties": false
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "notes"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^D[37]-[0-9]{2}$" },
+          "kicker": { "type": "string", "maxLength": 24 },
+          "title": { "type": "string", "minLength": 1, "maxLength": 36 },
+          "subtitle": { "type": "string", "maxLength": 90 },
+          "summary": { "type": "string", "maxLength": 180 },
+          "bullets": {
+            "type": "array",
+            "maxItems": 5,
+            "items": { "type": "string", "maxLength": 80 }
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": ["title", "body"],
+              "properties": {
+                "title": { "type": "string", "maxLength": 24 },
+                "body": { "type": "string", "maxLength": 100 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": ["src", "alt"],
+              "properties": {
+                "src": { "type": "string", "minLength": 1 },
+                "alt": { "type": "string", "minLength": 1, "maxLength": 80 },
+                "caption": { "type": "string", "maxLength": 80 },
+                "fit": { "enum": ["contain", "cover"] }
+              },
+              "additionalProperties": false
+            }
+          },
+          "notes": { "type": "string", "minLength": 1, "maxLength": 1000 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

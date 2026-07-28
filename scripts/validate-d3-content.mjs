@@ -66,9 +66,23 @@ for (const file of textFiles) {
   if (text.includes("\u8bc4\u59d4")) errors.push(`${path.relative(root, file)}: forbidden audience term found`);
 }
 
+const generatorFiles = [
+  "references/classroom-deck-guide.md",
+  "references/classroom-deck-schema.json",
+  "assets/classroom-deck/template.html",
+  "assets/classroom-deck/vendor/html2canvas.min.js",
+  "assets/classroom-deck/vendor/pptxgen.bundle.js",
+  "scripts/classroom-deck-core.mjs",
+  "scripts/validate-classroom-deck.mjs",
+  "scripts/build-classroom-deck.mjs"
+];
+for (const relative of generatorFiles) {
+  if (!fs.existsSync(path.join(root, relative))) errors.push(`missing classroom deck generator file: ${relative}`);
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
 
-console.log("Classroom content validation passed: D3/D7 coaching present, 11 project cards clean, audience wording clean.");
+console.log("Classroom content validation passed: D3/D7 coaching and deck generator present, 11 project cards clean.");

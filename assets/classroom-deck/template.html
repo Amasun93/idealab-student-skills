@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>ideaLab课堂演示</title>
+  <style>
+    :root{--ink:#10243f;--navy:#0b1f3a;--blue:#1769e0;--cyan:#38bdf8;--paper:#f7f9fc;--soft:#eaf2ff;--line:#cbd7e6;--muted:#52647a;--white:#fff;--danger:#c53636}
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#081526;color:var(--ink);font-family:"Microsoft YaHei UI","Noto Sans SC","PingFang SC",Arial,sans-serif}
+    button{font:inherit}.app{width:100%;height:100%;display:grid;grid-template-rows:52px 1fr 34px}.toolbar{display:flex;align-items:center;gap:10px;padding:0 16px;background:#06101e;color:#e8f2ff;border-bottom:1px solid #18314d;z-index:20}.toolbar strong{font-size:14px}.toolbar .spacer{flex:1}.toolbar button{border:1px solid #31516f;background:#10243f;color:#fff;border-radius:6px;padding:7px 12px;cursor:pointer}.toolbar button:hover{background:#1769e0}.toolbar button:disabled{opacity:.5;cursor:wait}.status{font-size:12px;color:#b7c9dd;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .viewport{position:relative;overflow:hidden;display:grid;place-items:center;background:radial-gradient(circle at 50% 20%,#173453,#071321 70%)}.stage{position:relative;width:1600px;height:900px;transform-origin:center center;background:var(--paper);box-shadow:0 24px 80px rgba(0,0,0,.42)}
+    .slide{position:absolute;inset:0;width:1600px;height:900px;padding:76px 92px 66px;background:var(--paper);display:none;overflow:hidden}.slide.active{display:flex;flex-direction:column}.slide::after{content:attr(data-page);position:absolute;right:42px;bottom:28px;font-size:18px;font-weight:700;color:#8291a4;letter-spacing:.08em}
+    .cover{background:linear-gradient(135deg,#07172b,#0f3564 64%,#1769e0);color:#fff;justify-content:center;padding-right:180px}.cover::before{content:"";position:absolute;right:-80px;top:-100px;width:610px;height:610px;border:1px solid rgba(255,255,255,.25);transform:rotate(18deg);box-shadow:0 0 0 64px rgba(255,255,255,.04),0 0 0 128px rgba(255,255,255,.025)}.cover::after{color:#cfe5ff}.cover .kicker{color:#9bdcff}.cover h1{font-size:74px;line-height:1.12;max-width:1220px;margin:22px 0 26px;letter-spacing:-.02em}.cover .subtitle{font-size:30px;line-height:1.55;max-width:1060px;color:#dbeafe}.cover .meta{margin-top:56px;font-size:23px;color:#bcd5ef;display:flex;gap:28px}
+    .kicker{font-size:19px;color:var(--blue);font-weight:800;letter-spacing:.12em;text-transform:uppercase}.slide h2{font-size:48px;line-height:1.2;margin:14px 0 32px;letter-spacing:-.015em}.summary{font-size:28px;line-height:1.55;color:#243a55}.body-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;flex:1;min-height:0}.body-grid.single{grid-template-columns:1fr}.copy{display:flex;flex-direction:column;gap:22px;min-height:0}.bullets{display:grid;gap:16px;margin:0;padding:0;list-style:none}.bullets li{position:relative;padding-left:34px;font-size:25px;line-height:1.48}.bullets li::before{content:"";position:absolute;left:0;top:.55em;width:14px;height:14px;background:var(--blue)}
+    .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-content:start}.card{background:#fff;border:1px solid var(--line);border-top:7px solid var(--blue);padding:26px 28px;min-height:150px}.card h3{font-size:25px;margin:0 0 13px}.card p{font-size:21px;line-height:1.48;margin:0;color:var(--muted)}
+    .image-frame{margin:0;background:#fff;border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:hidden}.image-frame img{width:100%;height:100%;min-height:0;object-fit:contain;background:#fff}.image-frame img.cover-fit{object-fit:cover}.caption{font-size:16px;color:#53657b;padding:10px 14px;border-top:1px solid var(--line);background:#f9fbfe}.diagram .body-grid{grid-template-columns:1.22fr .78fr}.diagram .image-frame{height:610px}.gallery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:245px;gap:18px;min-height:0}.gallery-grid .image-frame{height:245px}.gallery-grid.one{grid-template-columns:1fr;grid-auto-rows:560px}.gallery-grid.one .image-frame{height:560px}
+    .evidence-band{margin-top:auto;background:var(--navy);color:#fff;padding:24px 30px;display:flex;gap:28px;align-items:center}.evidence-band strong{font-size:24px}.evidence-band span{font-size:20px;color:#d5e7fa}.closing{background:linear-gradient(135deg,#eaf2ff,#fff);justify-content:center}.closing h2{font-size:60px;max-width:1200px}.closing .cards{margin-top:24px}.closing .card{background:rgba(255,255,255,.86)}.slide:not(.active){display:none!important}
+    .footer{display:flex;align-items:center;padding:0 16px;background:#06101e;color:#b7c9dd;font-size:12px}.footer .progress{height:4px;background:#1769e0;width:0;transition:width .2s}.footer .keys{margin-left:auto}.notes{position:fixed;right:18px;top:70px;width:min(480px,42vw);max-height:calc(100vh - 110px);overflow:auto;background:#fff;color:#12263f;border:2px solid #1769e0;box-shadow:0 18px 60px rgba(0,0,0,.35);padding:22px;z-index:40;display:none}.notes.open{display:block}.notes h3{margin:0 0 12px;font-size:20px}.notes p{white-space:pre-wrap;font-size:17px;line-height:1.65;margin:0}.exporting .toolbar,.exporting .footer,.exporting .notes{display:none!important}.exporting .app{display:block}.exporting .viewport{width:1600px;height:900px;background:#000}.exporting .stage{transform:none!important;box-shadow:none}.exporting .slide::after{display:block}
+    @media(max-width:800px){.toolbar .status,.footer .keys{display:none}.toolbar button{padding:6px 8px}.notes{left:12px;right:12px;width:auto}}
+  </style>
+</head>
+<body>
+  <script type="application/json" id="deck-data">__DECK_DATA__</script>
+  <div class="app">
+    <header class="toolbar">
+      <strong id="deck-label">ideaLab课堂演示</strong><span class="status" id="status">准备完成</span><span class="spacer"></span>
+      <button type="button" id="notes-btn">讲稿 N</button><button type="button" id="fullscreen-btn">全屏 F</button><button type="button" id="export-btn">导出申报PPTX</button>
+    </header>
+    <main class="viewport" id="viewport"><div class="stage" id="stage"></div></main>
+    <footer class="footer"><div class="progress" id="progress"></div><span class="keys">← → / 空格翻页　Home / End　N讲稿　F全屏</span></footer>
+  </div>
+  <aside class="notes" id="notes"><h3 id="notes-title">本页讲稿</h3><p id="notes-text"></p></aside>
+  <script src="assets/runtime/html2canvas.min.js"></script>
+  <script src="assets/runtime/pptxgen.bundle.js"></script>
+  <script>
+  (()=>{
+    const deck=JSON.parse(document.getElementById('deck-data').textContent);
+    const stage=document.getElementById('stage');const viewport=document.getElementById('viewport');const status=document.getElementById('status');const progress=document.getElementById('progress');const notes=document.getElementById('notes');let current=0;let busy=false;
+    const layoutMap={
+      'D3-01':'cover','D3-02':'problem','D3-03':'cards','D3-04':'diagram','D3-05':'diagram','D3-06':'diagram','D3-07':'closing',
+      'D7-01':'cover','D7-02':'problem','D7-03':'cards','D7-04':'cards','D7-05':'diagram','D7-06':'gallery','D7-07':'gallery','D7-08':'evidence','D7-09':'evidence','D7-10':'closing'
+    };
+    const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined&&text!==null)node.textContent=text;return node};
+    function addHeader(root,slide){root.append(el('div','kicker',slide.kicker||slide.id));root.append(el('h2','',slide.title));if(slide.subtitle)root.append(el('div','summary',slide.subtitle));}
+    function bullets(values){const ul=el('ul','bullets');(values||[]).forEach(value=>ul.append(el('li','',value)));return ul}
+    function cards(values){const grid=el('div','cards');(values||[]).forEach(item=>{const card=el('article','card');card.append(el('h3','',item.title));card.append(el('p','',item.body));grid.append(card)});return grid}
+    function imageFrame(image){const frame=el('figure','image-frame');const img=el('img',image.fit==='cover'?'cover-fit':'');img.src=image.src;img.alt=image.alt||'';frame.append(img);if(image.caption)frame.append(el('figcaption','caption',image.caption));return frame}
+    function render(slide,index){const type=layoutMap[slide.id]||'problem';const root=el('section',`slide ${type}`);root.dataset.page=`${String(index+1).padStart(2,'0')} / ${String(deck.slides.length).padStart(2,'0')}`;root.dataset.notes=slide.notes||'';
+      if(type==='cover'){root.append(el('div','kicker',slide.kicker||'ideaLab Project'));root.append(el('h1','',slide.title));root.append(el('div','subtitle',slide.subtitle||slide.summary||deck.meta.one_sentence||''));const meta=el('div','meta');meta.append(el('span','',deck.meta.student_name));if(deck.meta.grade)meta.append(el('span','',deck.meta.grade));root.append(meta);return root}
+      addHeader(root,slide);
+      if(type==='cards'||type==='closing'){if(slide.summary)root.append(el('div','summary',slide.summary));root.append(cards(slide.items||[]));if((slide.bullets||[]).length)root.append(bullets(slide.bullets));return root}
+      if(type==='diagram'){const grid=el('div','body-grid');const image=slide.images&&slide.images[0];if(image)grid.append(imageFrame(image));const copy=el('div','copy');if(slide.summary)copy.append(el('div','summary',slide.summary));copy.append(bullets(slide.bullets||[]));grid.append(copy);root.append(grid);return root}
+      if(type==='gallery'){const grid=el('div','body-grid');const imageGrid=el('div',`gallery-grid ${(slide.images||[]).length===1?'one':''}`);(slide.images||[]).forEach(image=>imageGrid.append(imageFrame(image)));grid.append(imageGrid);const copy=el('div','copy');if(slide.summary)copy.append(el('div','summary',slide.summary));copy.append(bullets(slide.bullets||[]));grid.append(copy);root.append(grid);return root}
+      if(type==='evidence'){const grid=el('div','body-grid');const copy=el('div','copy');if(slide.summary)copy.append(el('div','summary',slide.summary));if((slide.items||[]).length)copy.append(cards(slide.items));copy.append(bullets(slide.bullets||[]));grid.append(copy);if((slide.images||[])[0])grid.append(imageFrame(slide.images[0]));root.append(grid);return root}
+      const grid=el('div',`body-grid ${(slide.images||[]).length?'':'single'}`);const copy=el('div','copy');if(slide.summary)copy.append(el('div','summary',slide.summary));if((slide.items||[]).length)copy.append(cards(slide.items));copy.append(bullets(slide.bullets||[]));grid.append(copy);if((slide.images||[])[0])grid.append(imageFrame(slide.images[0]));root.append(grid);return root
+    }
+    deck.slides.forEach((slide,index)=>stage.append(render(slide,index)));const slides=[...stage.querySelectorAll('.slide')];
+    function fit(){const scale=Math.min(viewport.clientWidth/1600,viewport.clientHeight/900);stage.style.transform=`scale(${scale})`}
+    function go(index){current=Math.max(0,Math.min(index,slides.length-1));slides.forEach((slide,i)=>slide.classList.toggle('active',i===current));progress.style.width=`${((current+1)/slides.length)*100}%`;document.getElementById('notes-title').textContent=`第${current+1}页讲稿｜${deck.slides[current].title}`;document.getElementById('notes-text').textContent=deck.slides[current].notes||'';status.textContent=`${current+1} / ${slides.length}`}
+    const waitImages=async node=>{const images=[...node.querySelectorAll('img')];await Promise.all(images.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve})));if(document.fonts&&document.fonts.ready)await document.fonts.ready;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))};
+    async function exportPptx(){if(busy)return;busy=true;const button=document.getElementById('export-btn');button.disabled=true;document.body.classList.add('exporting');notes.classList.remove('open');const previous=current;
+      try{const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author=deck.meta.student_name;pptx.subject=deck.meta.project_title;pptx.title=deck.meta.output_name;pptx.company='ideaLab';
+        for(let i=0;i<slides.length;i++){go(i);status.textContent=`正在生成第 ${i+1} / ${slides.length} 页`;await waitImages(slides[i]);const canvas=await html2canvas(slides[i],{backgroundColor:null,scale:2,width:1600,height:900,useCORS:true,logging:false});const page=pptx.addSlide();page.addImage({data:canvas.toDataURL('image/png'),x:0,y:0,w:13.333,h:7.5});if(deck.slides[i].notes)page.addNotes(deck.slides[i].notes)}
+        const fileName=(deck.meta.output_name||'课堂演示').replace(/[<>:"/\\|?*]/g,'-')+'.pptx';await pptx.writeFile({fileName,compression:true});status.textContent='PPTX已导出，请交给Work Buddy归档';
+      }catch(error){console.error(error);status.textContent=`导出失败：${error.message}`;alert(`PPTX导出失败：${error.message}`)}finally{go(previous);document.body.classList.remove('exporting');fit();button.disabled=false;busy=false}}
+    document.getElementById('deck-label').textContent=deck.meta.project_title;document.title=deck.meta.output_name||deck.meta.project_title;document.getElementById('notes-btn').onclick=()=>notes.classList.toggle('open');document.getElementById('fullscreen-btn').onclick=()=>document.documentElement.requestFullscreen?.();document.getElementById('export-btn').onclick=exportPptx;
+    window.addEventListener('resize',fit);window.addEventListener('keydown',event=>{if(busy)return;if(['ArrowRight','PageDown',' '].includes(event.key)){event.preventDefault();go(current+1)}else if(['ArrowLeft','PageUp'].includes(event.key)){event.preventDefault();go(current-1)}else if(event.key==='Home')go(0);else if(event.key==='End')go(slides.length-1);else if(event.key.toLowerCase()==='n')notes.classList.toggle('open');else if(event.key.toLowerCase()==='f')document.documentElement.requestFullscreen?.();else if(event.key.toLowerCase()==='e')exportPptx()});
+    let touchX=null;viewport.addEventListener('touchstart',event=>touchX=event.touches[0].clientX,{passive:true});viewport.addEventListener('touchend',event=>{if(touchX===null)return;const delta=event.changedTouches[0].clientX-touchX;if(Math.abs(delta)>50)go(current+(delta<0?1:-1));touchX=null},{passive:true});
+    fit();go(0);window.__deckReady=true;window.exportClassroomPptx=exportPptx;
+  })();
+  </script>
+</body>
+</html>

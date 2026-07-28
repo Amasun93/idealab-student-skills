@@ -1,6 +1,6 @@
 ---
 name: idealab-student-skills
-description: Coach an ideaLab student through project retelling, opening-presentation and final-presentation planning and rehearsal, classroom project archiving, and daily research logs. Use when a student naturally asks to practice explaining a project, receive a teacher-readable AI practice assessment, make or rehearse an opening-defense PPT, prepare the final project presentation, create or organize project files, review the day's learning, or prepare the archive for teacher handoff. Infer intent from ordinary student language without requiring fixed commands. Optimize every interaction for primary-school students with voice, one short question at a time, teacher checkpoints, truthful evidence use, and safe copy-only file handling.
+description: Coach an ideaLab student through project retelling, opening and final presentation rehearsal, deterministic classroom-deck generation, project archiving, and daily research logs. Use when a student naturally asks to practice explaining a project, receive a teacher-readable AI assessment, prepare an opening or final defense, generate an offline HTML presentation and image-based PPTX with speaker notes from approved project-folder materials, organize files, or review learning. Infer intent from ordinary student language without fixed commands. Optimize for primary-school students with one short question at a time, teacher checkpoints, truthful evidence use, locked presentation templates, and safe copy-only file handling.
 ---
 
 # ideaLab 学生课堂项目助手
@@ -85,6 +85,21 @@ description: Coach an ideaLab student through project retelling, opening-present
 4. 一次只处理一页，先听学生想表达什么，再帮助整理页面和讲法。
 5. 完成后进行计时讲解、模拟提问和标明“仅供练习”的成果答辩评价。
 6. 若生成PPT文件，继续保存到 `06 答辩ppt`，使用清楚的“成果答辩”文件名并保留旧版本。
+
+## 课堂演示生成器
+
+学生内容和老师确认素材齐备后，读取 `references/classroom-deck-guide.md`，不要让模型自由编写HTML或CSS。
+
+1. 按 `references/classroom-deck-schema.json` 形成受控的演示JSON。
+2. D3严格使用 `D3-01` 至 `D3-07`；D7严格使用 `D7-01` 至 `D7-10`。
+3. 查看并确认图片含义后填写图片路径，不凭文件名猜测三张图。
+4. 运行 `node scripts/validate-classroom-deck.mjs --input "演示内容.json"`。
+5. 校验通过后运行 `node scripts/build-classroom-deck.mjs --input "演示内容.json" --output "目标答辩目录"`。
+6. 打开生成的HTML逐页检查，再让学生练习讲解。
+7. 由学生或Work Buddy点击HTML中的“导出申报PPTX”；导出文件每页为高清图片，逐页讲稿写入PPT备注。
+8. 将下载的PPTX复制回当前学生的 `06 答辩ppt` 对应目录，保留旧版本。
+
+内置模板、浏览器导出库和校验脚本是默认必需能力，不在课堂现场下载其他Skill或在线模板。外部Skill只能由老师提前审核、固定版本并作为可选风格，不得影响默认生成链路。
 
 ## 第一次建档
 
