@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "class_package": "2026-bohui-summer-d3",
+  "usage": "Match only the current student, then read only that project card. Do not enumerate the roster to students.",
+  "projects": [
+    {
+      "student_number": 1,
+      "student_name": "高浚铭",
+      "aliases": [
+        "高浚铭"
+      ],
+      "grade": "X3",
+      "project": "AI智慧交互图书馆导览书架",
+      "file": "project-card-01.json"
+    },
+    {
+      "student_number": 2,
+      "student_name": "伍梓菲",
+      "aliases": [
+        "伍梓菲"
+      ],
+      "grade": "G1",
+      "project": "盲童数独学习装置",
+      "file": "project-card-02.json"
+    },
+    {
+      "student_number": 3,
+      "student_name": "高尚",
+      "aliases": [
+        "高尚"
+      ],
+      "grade": "X5",
+      "project": "一种方便轮椅通过的公共场所智能路桩",
+      "file": "project-card-03.json"
+    },
+    {
+      "student_number": 4,
+      "student_name": "邹子轩",
+      "aliases": [
+        "邹子轩"
+      ],
+      "grade": "X5",
+      "project": "足感智训——可视化传感智能训练足球鞋系统",
+      "file": "project-card-04.json"
+    },
+    {
+      "student_number": 5,
+      "student_name": "王基锟",
+      "aliases": [
+        "王基锟"
+      ],
+      "grade": "C1",
+      "project": "指随心动——适合康复场景下的智能训练手套",
+      "file": "project-card-05.json"
+    },
+    {
+      "student_number": 6,
+      "student_name": "文嘉骏",
+      "aliases": [
+        "文嘉骏"
+      ],
+      "grade": "X5",
+      "project": "语音交互式盲人安全智能插座",
+      "file": "project-card-06.json"
+    },
+    {
+      "student_number": 7,
+      "student_name": "甘栩辰",
+      "aliases": [
+        "甘栩辰"
+      ],
+      "grade": "X3",
+      "project": "锦鳞跃灯——手持鲤鱼灯动作交互装置",
+      "file": "project-card-07.json"
+    },
+    {
+      "student_number": 8,
+      "student_name": "金嘉言",
+      "aliases": [
+        "金嘉言"
+      ],
+      "grade": "X2",
+      "project": "基于 MediaPipe 的匹克球智能引导与训练系统",
+      "file": "project-card-08.json"
+    },
+    {
+      "student_number": 9,
+      "student_name": "金芊妤",
+      "aliases": [
+        "金芊妤"
+      ],
+      "grade": "X4",
+      "project": "AI赋能：自闭症儿童数学学习辅助装置",
+      "file": "project-card-09.json"
+    },
+    {
+      "student_number": 10,
+      "student_name": "王虞睿",
+      "aliases": [
+        "王虞睿"
+      ],
+      "grade": "X3",
+      "project": "基于物联网技术的地铁针对盲人的主动引导服务系统",
+      "file": "project-card-10.json"
+    },
+    {
+      "student_number": 11,
+      "student_name": "刘星妤(双双)",
+      "aliases": [
+        "刘星妤(双双)",
+        "双双"
+      ],
+      "grade": "X5",
+      "project": "适合盲童小朋友使用的智能试衣镜",
+      "file": "project-card-11.json"
+    }
+  ]
+}
