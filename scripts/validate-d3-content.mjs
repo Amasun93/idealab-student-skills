@@ -58,7 +58,8 @@ for (const item of index.projects ?? []) {
 const textFiles = [
   path.join(root, "SKILL.md"),
   path.join(references, "d3-retelling-coach.md"),
-  path.join(references, "d3-presentation-coach.md")
+  path.join(references, "d3-presentation-coach.md"),
+  path.join(references, "d7-presentation-coach.md")
 ];
 for (const file of textFiles) {
   const text = fs.readFileSync(file, "utf8");
@@ -70,4 +71,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("D3 content validation passed: 11 project cards, privacy fields clean, audience wording clean.");
+console.log("Classroom content validation passed: D3/D7 coaching present, 11 project cards clean, audience wording clean.");
