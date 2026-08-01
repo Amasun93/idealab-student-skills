@@ -1,6 +1,6 @@
 ---
 name: idealab-student-skills
-description: Coach an ideaLab student through project retelling, opening and final presentation rehearsal, deterministic classroom-deck generation, project archiving, and daily research logs. Use when a student naturally asks to practice explaining a project, receive a teacher-readable AI assessment, prepare an opening or final defense, generate an offline HTML presentation and image-based PPTX with speaker notes from approved project-folder materials, organize files, or review learning. Infer intent from ordinary student language without fixed commands. Optimize for primary-school students with one short question at a time, teacher checkpoints, truthful evidence use, locked presentation templates, and safe copy-only file handling.
+description: Use ideaLab Student as the single student-facing entry for project retelling, opening and final defense presentations, speaker scripts, interactive defense practice, project archiving, and research logs. Route ordinary student language to bundled specialist modules without requiring students to remember module names. For final defense work, inventory local materials first, preserve the problem-to-solution-to-experiment logic, mark missing evidence, and generate offline HTML from confirmed project facts. Optimize for children with one short question at a time, teacher checkpoints, and safe copy-only file handling.
 ---
 
 # ideaLab 学生课堂项目助手
@@ -63,43 +63,47 @@ description: Coach an ideaLab student through project retelling, opening and fin
 学生表达要做开题PPT时，不要求他说固定入口句。先根据当前对话判断老师检查状态：
 
 - 已经明确说老师检查通过：直接开始，不重复询问。
-- 已经明确说还没检查：提醒先完成老师复述和三张图检查，暂不代做PPT。
-- 当前状态不清楚：只问：“老师已经检查过你的项目复述和三张图了吗？”
+- 已经明确说还没检查：提醒先完成老师复述和开题书检查，暂不代做PPT。
+- 当前状态不清楚：只问：“老师已经检查过你的项目复述和开题书了吗？”
 
 确认后读取 `references/d3-presentation-coach.md` 并严格执行：
 
-1. 读取当前项目卡，并优先使用老师确认后的概念图、流程图和硬件框图。
-2. 以约四分钟讲解加一分钟听众提问为默认。
-3. 一次只处理一页；先问“这一页你最想让听众听懂什么？”，学生回答后再整理页面内容和讲法。
-4. 全程使用“听众”“老师和同学”或“提问的老师”，统一以听众能否听懂为判断标准。
-5. 完成后进行一次计时练习和模拟提问，给出标明“仅供练习”的评价。
-6. 若生成PPT文件，保存到 `06 答辩ppt`；写入前先确认，不覆盖已有文件。若当前环境不能生成PPT文件，输出逐页大纲和讲稿供学生制作，不声称已经创建文件。
+1. 读取当前项目卡、开题书、开题书参考图和学生本轮已经说过的内容。
+2. 先读取 `references/d3-visual-preparation.md`，完成概念图、工作流程图和硬件框图；三张图未完成前不要编译HTML。
+3. 概念图默认生成一张，硬性不合格时只重生成一次；第二次仍不合格时使用学生手绘图，仍无手绘图时使用开题书参考图。
+4. 按 `references/d3-visual-schema.json` 保存 `D3图纸内容.json`，运行 `node scripts/validate-d3-visuals.mjs --input "D3图纸内容.json"`；校验通过后再编译HTML。
+5. 以约四分钟讲解加一分钟听众提问为默认。
+6. 一次只处理一页；先问“这一页你最想让听众听懂什么？”，学生回答后再整理页面内容和讲法。
+7. 全程使用“听众”“老师和同学”或“提问的老师”，统一以听众能否听懂为判断标准。
+8. 完成后进行一次计时练习和模拟提问，给出标明“仅供练习”的评价。
+9. 若生成PPT文件，保存到 `06 答辩ppt`；写入前先确认，不覆盖已有文件。若当前环境不能生成PPT文件，输出逐页大纲和讲稿供学生制作，不声称已经创建文件。
 
 ## 成果答辩PPT与讲解训练
 
-学生表达要准备最后答辩、成果展示或最终PPT时，直接识别意图，不要求使用固定句式。读取 `references/d7-presentation-coach.md` 并严格执行：
+学生表达要准备最后答辩、成果展示或最终PPT时，直接识别意图，不要求使用固定句式。先运行 `node scripts/manage-bundled-skills.mjs check defense-presentation`，然后完整读取 `modules/defense-presentation/SKILL.md` 并按该模块执行。
 
-1. 读取当前项目卡、学生档案以及实际存在的制作照片、原型、实验记录和修改记录。
-2. 只把已经完成并有材料支持的内容写成成果；未完成、未展示或没有数据的内容必须如实说明。
-3. 按“为什么做—怎样设计—实际做出什么—证据说明怎样—下一步怎么改”的顺序组织。
-4. 一次只处理一页，先听学生想表达什么，再帮助整理页面和讲法。
-5. 完成后进行计时讲解、模拟提问和标明“仅供练习”的成果答辩评价。
-6. 若生成PPT文件，继续保存到 `06 答辩ppt`，使用清楚的“成果答辩”文件名并保留旧版本。
+答辩模块负责素材盘点、项目逻辑重建、动态页面、离线HTML、逐页参考稿和交互练习页。学生仍然只与 `idealab-student-skills` 对话，不要求他说出 `defense-presentation`。旧的 `references/d7-presentation-coach.md` 只作为兼容参考，不再作为最终答辩的主流程。
 
 ## 课堂演示生成器
 
 学生内容和老师确认素材齐备后，读取 `references/classroom-deck-guide.md`，不要让模型自由编写HTML或CSS。
 
-1. 按 `references/classroom-deck-schema.json` 形成受控的演示JSON。
-2. D3严格使用 `D3-01` 至 `D3-07`；D7严格使用 `D7-01` 至 `D7-10`。
-3. 查看并确认图片含义后填写图片路径，不凭文件名猜测三张图。
-4. 运行 `node scripts/validate-classroom-deck.mjs --input "演示内容.json"`。
-5. 校验通过后运行 `node scripts/build-classroom-deck.mjs --input "演示内容.json" --output "目标答辩目录"`。
-6. 打开生成的HTML逐页检查，再让学生练习讲解。
-7. 由学生或Work Buddy点击HTML中的“导出申报PPTX”；导出文件每页为高清图片，逐页讲稿写入PPT备注。
-8. 将下载的PPTX复制回当前学生的 `06 答辩ppt` 对应目录，保留旧版本。
+1. D3先读取 `references/d3-visual-preparation.md` 和 `references/d3-visual-schema.json`，准备三张图；完成后再按 `references/classroom-deck-schema.json` 形成受控的演示JSON。
+2. D3严格使用 `D3-01` 至 `D3-06`，继续使用现有课堂演示生成器。
+3. 最终答辩不再固定十页；交给内置 `defense-presentation` 按素材和逻辑动态安排。
+4. D3运行 `node scripts/validate-classroom-deck.mjs --input "演示内容.json"`，通过后运行 `node scripts/build-classroom-deck.mjs --input "演示内容.json" --output "目标答辩目录"`。
+5. 最终答辩先运行模块内 `scan-defense-materials.mjs`，向学生或老师确认盘点方案，再校验并运行 `build-defense-presentation.mjs`。
+6. 打开生成的HTML逐页检查；确认无断图、重叠、溢出和素材漏用后，再让学生练习讲解。
 
-内置模板、浏览器导出库和校验脚本是默认必需能力，不在课堂现场下载其他Skill或在线模板。外部Skill只能由老师提前审核、固定版本并作为可选风格，不得影响默认生成链路。
+## 内置专项 Skill
+
+`idealab-student-skills` 是唯一学生入口。可用模块登记在 `references/skill-registry.json`；使用前运行：
+
+```bash
+node scripts/manage-bundled-skills.mjs check
+```
+
+仓库当前内置 `defense-presentation`。更新 `idealab-student-skills` 后，内置模块会一起更新，不需要学生单独搜索、下载或记住模块名称。以后新增专项能力时，继续登记到注册表并由本 Skill 自动路由；没有通过老师审核和版本固定的在线 Skill 不在课堂现场临时安装。
 
 ## 第一次建档
 

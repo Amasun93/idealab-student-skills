@@ -2,7 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { validateDeck, validateDeckMedia } from "./classroom-deck-core.mjs";
+import { validateVisualSpec } from "./d3-visual-core.mjs";
 
 function parseArgs(argv) {
   const args = {};
@@ -17,27 +17,24 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 if (!args.input) {
-  console.error("Usage: node scripts/validate-classroom-deck.mjs --input <演示内容.json>");
+  console.error("Usage: node scripts/validate-d3-visuals.mjs --input <D3图纸内容.json>");
   process.exit(2);
 }
 
 const inputPath = path.resolve(args.input);
-let deck;
+let spec;
 try {
-  deck = JSON.parse(fs.readFileSync(inputPath, "utf8"));
+  spec = JSON.parse(fs.readFileSync(inputPath, "utf8"));
 } catch (error) {
   console.error(`无法读取JSON: ${error.message}`);
   process.exit(1);
 }
 
-const structure = validateDeck(deck);
-const media = validateDeckMedia(deck, path.dirname(inputPath));
-const errors = [...structure.errors, ...media.errors];
-const warnings = [...structure.warnings, ...media.warnings];
+const { errors, warnings } = validateVisualSpec(spec, path.dirname(inputPath));
 warnings.forEach((warning) => console.warn(`警告: ${warning}`));
 if (errors.length) {
-  [...new Set(errors)].forEach((error) => console.error(`错误: ${error}`));
+  errors.forEach((error) => console.error(`错误: ${error}`));
   process.exit(1);
 }
 
-console.log(`演示内容校验通过: ${deck.deck_type}, ${deck.slides.length}页。`);
+console.log(`D3三张图校验通过: ${spec.project_title}`);

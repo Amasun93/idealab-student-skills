@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "plan_confirmed": true,
+  "meta": {
+    "student_name": "测试学生",
+    "project_title": "AI智慧交互导览书架",
+    "project_short_name": "智慧书架",
+    "grade_band": "middle",
+    "core_problem": "读者找书和归位效率低",
+    "archive_root": "."
+  },
+  "slides": [
+    {
+      "section": "cover",
+      "title": "AI智慧交互导览书架",
+      "summary": "用识别、匹配和即时反馈，让找书与归位更清楚",
+      "images": [{ "status": "generated", "src": "cover.svg", "label": "封面概念背景" }],
+      "notes": "大家好，我是测试学生。我的项目关注图书馆中找书和归位不够清楚的问题。"
+    },
+    {
+      "section": "problem",
+      "title": "找不到和放不回去，会同时影响读者与馆员",
+      "summary": "标签只能告诉我们大类，却不能及时指出一本书所在的具体仓位。",
+      "bullets": ["读者需要逐排寻找", "错放会让下一位读者更难找到", "馆员需要反复巡查"],
+      "logic_link": "先把真实生活问题讲清楚",
+      "notes": "我们先想象在图书馆找一本具体的书。即使知道它属于哪一类，也可能还要在一整排中慢慢找。"
+    },
+    {
+      "section": "current-state",
+      "title": "现有办法能标出类别，但具体位置和错放反馈仍不足",
+      "summary": "比较不是为了说现有方案一无是处，而是找到当前场景仍没有解决的部分。",
+      "bullets": ["分类标签容易理解", "人工整理能处理异常", "两者都缺少即时的具体仓位反馈"],
+      "images": [{ "status": "generated", "src": "cover.svg", "label": "现有方案原理示意", "caption": "分类与人工整理的原理示意" }],
+      "logic_link": "现有不足直接引出本项目优势",
+      "notes": "我比较了分类标签和人工整理，它们都有作用，但无法同时提供具体仓位与即时反馈。"
+    },
+    {
+      "section": "goal",
+      "title": "把一次找书和归位变成清楚的即时引导",
+      "summary": "核心不是增加更多功能，而是减少寻找时间并降低错放。",
+      "logic_link": "确定唯一核心目标",
+      "notes": "因此我们的核心目标，是让人更快知道书在哪里，以及应该放回哪里。"
+    },
+    {
+      "section": "solution",
+      "title": "识别、匹配和亮灯共同回应核心问题",
+      "bullets": ["NFC识别书本身份", "主控匹配目标仓位", "灯光给出可见反馈", "错放时提醒重新归位"],
+      "logic_link": "每个功能都服务于找书和归位效率",
+      "notes": "读者操作后，装置先识别书本，再查找对应仓位，最后用灯光把结果直接显示出来。"
+    },
+    {
+      "section": "prototype",
+      "title": "原型照片尚未补入材料包",
+      "summary": "页面先保留真实素材位置，不用AI成品图代替。",
+      "images": [{ "status": "missing", "label": "原型正面与使用状态", "needed": "装置完整正面照，以及读者操作时的灯光反馈", "requested_from": "指导老师或学生" }],
+      "logic_link": "真实原型用来证明装置状态",
+      "notes": "这里需要补充真实原型照片。拍摄时要同时看见书架整体和亮灯的位置。"
+    },
+    {
+      "section": "experiment",
+      "title": "用对比实验验证找书时间是否减少",
+      "summary": "同样的书目和距离下，比较普通标签与装置引导。",
+      "images": [{ "status": "present", "src": "experiment.svg", "label": "实验记录图表", "caption": "测试用记录图表" }],
+      "logic_link": "实验指标回到核心效率问题",
+      "notes": "我们会控制书目和起点相同，分别记录两种方式完成找书的时间。"
+    },
+    {
+      "section": "summary",
+      "title": "更具体的即时反馈，是这个项目的主要亮点",
+      "bullets": ["不足：传统标签只到类别", "改进：识别后指出具体仓位", "验证：比较时间与归位正确率"],
+      "logic_link": "从问题、方案到验证形成闭环",
+      "notes": "最后回到最初的问题，我们的亮点不是功能数量，而是把反馈变得更具体、更及时。"
+    }
+  ],
+  "existing_solutions": [
+    {
+      "name": "分类标签",
+      "source_ref": "测试夹具中的分类标签观察记录",
+      "solution": "按主题或编号划分书架区域",
+      "strength": "成本低，读者容易理解",
+      "limitation": "只能缩小范围，不能指出一本书的具体仓位",
+      "project_advantage": "识别书本后用灯光指出具体位置"
+    },
+    {
+      "name": "馆员人工整理",
+      "source_ref": "测试夹具中的馆员工作观察记录",
+      "solution": "由馆员巡查并纠正错放书本",
+      "strength": "能够处理复杂和异常情况",
+      "limitation": "依赖持续人工检查，反馈不及时",
+      "project_advantage": "在读者归位当下给出提醒"
+    }
+  ],
+  "experiments": [
+    {
+      "type": "effectiveness",
+      "status": "planned",
+      "purpose": "比较两种方式的找书时间",
+      "method": "保持书目、起点和距离一致，分别记录普通标签与装置引导所需时间"
+    }
+  ],
+  "qa": [
+    {
+      "category": "背景与目标",
+      "question": "为什么不能只把分类标签做得更大？",
+      "answer": "因为本项目要解决的是具体仓位和即时反馈。更大的标签只能让类别更明显，仍然不能告诉读者某一本书在哪个位置。"
+    },
+    {
+      "category": "方法与实验",
+      "question": "怎样证明装置真的让找书更快？",
+      "answer": "保持书目、起点和距离相同，让参与者分别使用普通标签和装置引导，记录完成时间并进行比较。"
+    }
+  ]
+}

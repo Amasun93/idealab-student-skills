@@ -1,12 +1,24 @@
+import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 
 export const EXPECTED_IDS = {
-  "d3-opening": ["D3-01", "D3-02", "D3-03", "D3-04", "D3-05", "D3-06", "D3-07"],
+  "d3-opening": ["D3-01", "D3-02", "D3-03", "D3-04", "D3-05", "D3-06"],
   "d7-final": ["D7-01", "D7-02", "D7-03", "D7-04", "D7-05", "D7-06", "D7-07", "D7-08", "D7-09", "D7-10"]
 };
 
 const HTML_RE = /<\/?[a-z][^>]*>|javascript:|data:text\/html/i;
 const D3_FORBIDDEN = ["制作过程", "原型成品", "实验结果", "已经证明", "已经完成制作"];
+const IMAGE_ROLES = new Set(["scene-photo", "concept", "process-flow", "hardware-block", "opening-book", "student-sketch", "prototype", "making-process", "experiment", "result", "reference"]);
+const IMAGE_ORIGINS = new Set(["ai-generated", "student-handdrawn", "opening-book", "teacher-provided", "project-archive", "web-source"]);
+const REVIEW_STATES = new Set(["approved", "fallback-handdrawn", "fallback-opening-book", "unreviewed"]);
+const D3_REQUIRED_ROLES = {
+  "D3-01": "scene-photo",
+  "D3-03": "concept",
+  "D3-04": "process-flow",
+  "D3-05": "hardware-block",
+  "D3-06": "opening-book"
+};
 
 function textValues(slide) {
   return [
@@ -14,6 +26,7 @@ function textValues(slide) {
     slide.title,
     slide.subtitle,
     slide.summary,
+    ...(slide.source_refs ?? []),
     ...(slide.bullets ?? []),
     ...(slide.items ?? []).flatMap((item) => [item.title, item.body]),
     ...(slide.images ?? []).flatMap((image) => [image.alt, image.caption]),
@@ -75,13 +88,21 @@ export function validateDeck(deck) {
       checkText(errors, item?.body, `${prefix}.items[${itemIndex}].body`, 100, true);
     });
 
+    if (slide.source_refs !== undefined && !Array.isArray(slide.source_refs)) errors.push(`${prefix}.source_refs必须是数组`);
+    if ((slide.source_refs ?? []).length > 6) errors.push(`${prefix}.source_refs最多6项`);
+    (slide.source_refs ?? []).forEach((value, sourceIndex) => checkText(errors, value, `${prefix}.source_refs[${sourceIndex}]`, 260, true));
+
     if (slide.images !== undefined && !Array.isArray(slide.images)) errors.push(`${prefix}.images必须是数组`);
     if ((slide.images ?? []).length > 4) errors.push(`${prefix}.images最多4张`);
     (slide.images ?? []).forEach((image, imageIndex) => {
       checkText(errors, image?.src, `${prefix}.images[${imageIndex}].src`, 500, true);
       checkText(errors, image?.alt, `${prefix}.images[${imageIndex}].alt`, 80, true);
       checkText(errors, image?.caption, `${prefix}.images[${imageIndex}].caption`, 80);
+      checkText(errors, image?.description, `${prefix}.images[${imageIndex}].description`, 180);
       if (image?.fit && !["contain", "cover"].includes(image.fit)) errors.push(`${prefix}.images[${imageIndex}].fit只能是contain或cover`);
+      if (image?.role && !IMAGE_ROLES.has(image.role)) errors.push(`${prefix}.images[${imageIndex}].role无效`);
+      if (image?.origin && !IMAGE_ORIGINS.has(image.origin)) errors.push(`${prefix}.images[${imageIndex}].origin无效`);
+      if (image?.review_status && !REVIEW_STATES.has(image.review_status)) errors.push(`${prefix}.images[${imageIndex}].review_status无效`);
     });
 
     textValues(slide).forEach((value) => {
@@ -90,10 +111,37 @@ export function validateDeck(deck) {
   });
 
   if (deck.deck_type === "d3-opening") {
-    ["D3-04", "D3-05", "D3-06"].forEach((id) => {
+    Object.entries(D3_REQUIRED_ROLES).forEach(([id, role]) => {
       const slide = deck.slides.find((item) => item.id === id);
-      if (!slide?.images?.length) errors.push(`${id}必须包含老师确认的图纸图片`);
+      if (!slide?.images?.length) {
+        errors.push(`${id}必须包含${role}图片`);
+        return;
+      }
+      const image = slide.images[0];
+      if (image.role !== role) errors.push(`${id}首张图片role必须是${role}`);
+      if (!IMAGE_ORIGINS.has(image.origin)) errors.push(`${id}首张图片必须填写有效origin`);
+      if (!REVIEW_STATES.has(image.review_status) || image.review_status === "unreviewed") errors.push(`${id}首张图片必须完成质量检查`);
+      if (!image.description?.trim()) errors.push(`${id}首张图片必须填写画面含义description`);
     });
+    ["D3-02", "D3-03", "D3-04", "D3-05", "D3-06"].forEach((id) => {
+      const slide = deck.slides.find((item) => item.id === id);
+      if (!slide?.source_refs?.length) errors.push(`${id}必须填写source_refs，说明内容依据`);
+    });
+    const problemSlide = deck.slides.find((item) => item.id === "D3-02");
+    if (!problemSlide?.images?.some((image) => image.role === "scene-photo")) warnings.push("D3-02建议使用一张清晰的相关场景图");
+    const concept = deck.slides.find((item) => item.id === "D3-03")?.images?.[0];
+    if (concept?.src && (/\.svg(?:$|[?#])/i.test(concept.src) || /^data:image\/svg\+xml/i.test(concept.src))) {
+      errors.push("D3-03概念图必须是实体场景效果图，不能使用SVG框图");
+    }
+    if (concept) {
+      const checks = concept.quality_checks;
+      const requiredChecks = ["physical_product", "matches_opening_book", "clear_image"];
+      if (concept.origin === "ai-generated") requiredChecks.push("user_or_hand", "usage_scene", "interaction_visible");
+      if (!checks || typeof checks !== "object") errors.push("D3-03概念图必须填写quality_checks质量检查");
+      else requiredChecks.forEach((key) => {
+        if (checks[key] !== true) errors.push(`D3-03概念图质量检查未通过: ${key}`);
+      });
+    }
     const visible = deck.slides.flatMap(textValues).join("\n");
     D3_FORBIDDEN.forEach((term) => {
       if (visible.includes(term)) errors.push(`D3开题内容不能使用“${term}”`);
@@ -107,6 +155,66 @@ export function validateDeck(deck) {
     });
   }
 
+  return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
+}
+
+function jpegDimensions(buffer) {
+  let offset = 2;
+  while (offset + 8 < buffer.length) {
+    if (buffer[offset] !== 0xff) { offset += 1; continue; }
+    const marker = buffer[offset + 1];
+    const length = buffer.readUInt16BE(offset + 2);
+    if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker)) {
+      return { width: buffer.readUInt16BE(offset + 7), height: buffer.readUInt16BE(offset + 5) };
+    }
+    if (!length || length < 2) break;
+    offset += 2 + length;
+  }
+  return null;
+}
+
+function rasterDimensions(buffer, extension) {
+  if (extension === ".png" && buffer.length >= 24 && buffer.subarray(1, 4).toString("ascii") === "PNG") {
+    return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+  }
+  if ([".jpg", ".jpeg"].includes(extension) && buffer.length >= 4 && buffer[0] === 0xff && buffer[1] === 0xd8) return jpegDimensions(buffer);
+  return null;
+}
+
+function readImageSource(src, inputDirectory) {
+  const dataMatch = /^data:image\/(png|jpeg);base64,(.+)$/i.exec(src ?? "");
+  if (dataMatch) return { buffer: Buffer.from(dataMatch[2], "base64"), extension: dataMatch[1].toLowerCase() === "png" ? ".png" : ".jpg", label: "内嵌图片" };
+  const filePath = path.resolve(inputDirectory, src ?? "");
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return { error: `图片不存在: ${src}` };
+  return { buffer: fs.readFileSync(filePath), extension: path.extname(filePath).toLowerCase(), label: src };
+}
+
+export function validateDeckMedia(deck, inputDirectory) {
+  const errors = [];
+  const warnings = [];
+  if (deck?.deck_type !== "d3-opening" || !Array.isArray(deck.slides)) return { errors, warnings };
+
+  const hashes = new Map();
+  for (const slide of deck.slides) {
+    for (const image of slide.images ?? []) {
+      const source = readImageSource(image.src, inputDirectory);
+      if (source.error) { errors.push(source.error); continue; }
+      const hash = crypto.createHash("sha256").update(source.buffer).digest("hex");
+      if (["concept", "process-flow", "hardware-block", "opening-book"].includes(image.role)) {
+        const previous = hashes.get(hash);
+        if (previous) errors.push(`${slide.id}与${previous}使用了相同图片，三张图和开题书必须各自对应`);
+        else hashes.set(hash, slide.id);
+      }
+      if (["scene-photo", "concept"].includes(image.role)) {
+        const dimensions = rasterDimensions(source.buffer, source.extension);
+        if (dimensions && (dimensions.width < 1280 || dimensions.height < 720)) {
+          errors.push(`${slide.id}图片清晰度不足: ${source.label} 为${dimensions.width}×${dimensions.height}，至少需要1280×720`);
+        } else if (!dimensions && ![".webp"].includes(source.extension)) {
+          warnings.push(`${slide.id}无法自动识别图片尺寸，请人工确认清晰度: ${source.label}`);
+        }
+      }
+    }
+  }
   return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
 }
 

@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { sanitizeFileName, toPosix, validateDeck } from "./classroom-deck-core.mjs";
+import { sanitizeFileName, toPosix, validateDeck, validateDeckMedia } from "./classroom-deck-core.mjs";
 
 function parseArgs(argv) {
   const args = {};
@@ -62,10 +62,13 @@ const templatePath = path.join(skillRoot, "assets", "classroom-deck", "template.
 const vendorPath = path.join(skillRoot, "assets", "classroom-deck", "vendor");
 
 const deck = JSON.parse(fs.readFileSync(inputPath, "utf8"));
-const { errors, warnings } = validateDeck(deck);
+const structure = validateDeck(deck);
+const media = validateDeckMedia(deck, inputDirectory);
+const errors = [...structure.errors, ...media.errors];
+const warnings = [...structure.warnings, ...media.warnings];
 warnings.forEach((warning) => console.warn(`警告: ${warning}`));
 if (errors.length) {
-  errors.forEach((error) => console.error(`错误: ${error}`));
+  [...new Set(errors)].forEach((error) => console.error(`错误: ${error}`));
   process.exit(1);
 }
 

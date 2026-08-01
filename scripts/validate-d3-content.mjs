@@ -67,14 +67,19 @@ for (const file of textFiles) {
 }
 
 const generatorFiles = [
+  "references/d3-visual-preparation.md",
+  "references/d3-visual-schema.json",
   "references/classroom-deck-guide.md",
   "references/classroom-deck-schema.json",
   "assets/classroom-deck/template.html",
   "assets/classroom-deck/vendor/html2canvas.min.js",
   "assets/classroom-deck/vendor/pptxgen.bundle.js",
   "scripts/classroom-deck-core.mjs",
+  "scripts/d3-visual-core.mjs",
+  "scripts/validate-d3-visuals.mjs",
   "scripts/validate-classroom-deck.mjs",
-  "scripts/build-classroom-deck.mjs"
+  "scripts/build-classroom-deck.mjs",
+  "tests/classroom-deck.test.mjs"
 ];
 for (const relative of generatorFiles) {
   if (!fs.existsSync(path.join(root, relative))) errors.push(`missing classroom deck generator file: ${relative}`);

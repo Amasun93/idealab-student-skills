@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>答辩练习</title>
+  <style>
+    :root{--ink:#17212b;--paper:#f4f2ed;--teal:#087f78;--yellow:#f4c95d;--muted:#637078}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"Microsoft YaHei UI","Noto Sans SC",sans-serif;letter-spacing:0}.top{background:var(--ink);color:#fff;padding:24px 5vw;display:flex;align-items:center;gap:16px}.top h1{font-size:26px;margin:0}.top span{margin-left:auto}.main{max-width:1100px;margin:0 auto;padding:42px 24px}.filter{display:flex;align-items:center;gap:10px;margin-bottom:24px;font-weight:700}.filter select{min-width:180px;padding:9px 12px;border:1px solid var(--ink);border-radius:4px;background:#fff;font:inherit}.category{color:var(--teal);font-weight:800}.question{font-size:38px;line-height:1.35;margin:18px 0 28px}.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{border:1px solid var(--ink);background:#fff;padding:11px 18px;border-radius:5px;cursor:pointer;font-size:16px}.actions button.primary{background:var(--teal);color:#fff;border-color:var(--teal)}details{margin-top:28px;border-top:6px solid var(--yellow);background:#fff;padding:20px}summary{font-size:19px;font-weight:800;cursor:pointer}.answer{font-size:20px;line-height:1.7;white-space:pre-wrap;margin-top:18px}.progress{margin-top:32px;height:10px;background:#d5d9d6}.progress div{height:100%;background:var(--teal);width:0}.queue{margin-top:14px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <script id="practice-data" type="application/json">__PRACTICE_DATA__</script>
+  <header class="top"><h1 id="title"></h1><span id="counter"></span></header>
+  <main class="main">
+    <label class="filter">题目类别<select id="category-filter"><option value="all">全部类别</option></select></label>
+    <div class="category" id="category"></div><div class="question" id="question"></div>
+    <div class="actions"><button class="primary" id="next">换一道题</button><button id="known">已经会了</button><button id="again">还需练习</button></div>
+    <details id="answer-box"><summary>查看参考回答</summary><div class="answer" id="answer"></div></details>
+    <div class="progress"><div id="bar"></div></div><div class="queue" id="queue"></div>
+  </main>
+  <script>
+  (()=>{const data=JSON.parse(document.getElementById('practice-data').textContent);let index=0;let visible=data.qa.map((_,i)=>i);const state=data.qa.map(()=>null);const filter=document.getElementById('category-filter');[...new Set(data.qa.map(item=>item.category||'项目理解'))].forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value;filter.append(option)});const show=()=>{const actual=visible[index];const item=data.qa[actual];document.getElementById('category').textContent=item.category||'项目理解';document.getElementById('question').textContent=item.question;document.getElementById('answer').textContent=item.answer;document.getElementById('counter').textContent=`${index+1} / ${visible.length}`;document.getElementById('answer-box').open=false;const done=state.filter(Boolean).length;document.getElementById('bar').style.width=`${data.qa.length?done/data.qa.length*100:0}%`;document.getElementById('queue').textContent=`已掌握 ${state.filter(x=>x==='known').length} 题｜还需练习 ${state.filter(x=>x==='again').length} 题`};filter.onchange=()=>{visible=data.qa.map((item,i)=>({item,i})).filter(({item})=>filter.value==='all'||(item.category||'项目理解')===filter.value).map(({i})=>i);index=0;show()};document.getElementById('title').textContent=`${data.meta.student_name}-${data.meta.project_short_name} 答辩练习`;document.getElementById('next').onclick=()=>{index=(index+1)%visible.length;show()};document.getElementById('known').onclick=()=>{state[visible[index]]='known';show()};document.getElementById('again').onclick=()=>{state[visible[index]]='again';show()};show();window.__practiceReady=true})()
+  </script>
+</body>
+</html>
