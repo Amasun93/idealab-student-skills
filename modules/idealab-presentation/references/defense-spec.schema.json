@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ideaLab Defense Presentation Spec",
+  "title": "ideaLab Presentation Spec",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "plan_confirmed", "meta", "slides", "existing_solutions", "experiments", "qa"],

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ideaLab 演讲答辩"
+  short_description: "盘点本地素材，生成演讲答辩演示、逐页参考稿与练习页"
+  default_prompt: "使用 $idealab-presentation 读取我的学生项目档案，先盘点材料并让我确认，再生成答辩HTML、逐页参考稿和答辩练习页。"

@@ -7,6 +7,6 @@
     "test": "node --test tests/*.test.mjs",
     "skills:list": "node scripts/manage-bundled-skills.mjs list",
     "skills:check": "node scripts/manage-bundled-skills.mjs check",
-    "defense:validate": "node modules/defense-presentation/scripts/validate-defense-spec.mjs"
+    "presentation:validate": "node modules/idealab-presentation/scripts/validate-defense-spec.mjs"
   }
 }

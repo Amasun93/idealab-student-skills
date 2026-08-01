@@ -1,9 +1,9 @@
 ---
-name: defense-presentation
+name: idealab-presentation
 description: 基于学生本地项目档案生成项目答辩演示、逐页参考稿、素材盘点和交互式答辩练习。用于学生或老师提出“做答辩PPT/HTML”“整理成果展示”“生成演讲稿或逐字稿”“准备评委提问”“检查答辩素材是否齐全”等需求；尤其适合需要从开题书、图纸、过程照片、原型、视频和实验记录中建立“问题—现状—目标—功能—创新—实验”逻辑链，并在素材缺失时明确待补项的场景。
 ---
 
-# 项目答辩演示
+# ideaLab 演讲答辩
 
 把本模块作为 `idealab-student-skills` 的内置能力使用。学生不需要记住模块名称；识别到答辩、成果展示、演讲稿或答辩练习意图后，直接进入本流程。
 
@@ -95,9 +95,9 @@ description: 基于学生本地项目档案生成项目答辩演示、逐页参�
 按 [defense-spec.schema.json](references/defense-spec.schema.json) 形成答辩内容 JSON，并依次运行：
 
 ```bash
-node modules/defense-presentation/scripts/scan-defense-materials.mjs --archive "学生档案" --output "06 答辩ppt" --name "姓名-项目简称"
-node modules/defense-presentation/scripts/validate-defense-spec.mjs --input "答辩内容.json"
-node modules/defense-presentation/scripts/build-defense-presentation.mjs --input "答辩内容.json" --inventory "姓名-项目简称-答辩素材盘点.json" --output "06 答辩ppt"
+node modules/idealab-presentation/scripts/scan-defense-materials.mjs --archive "学生档案" --output "06 答辩ppt" --name "姓名-项目简称"
+node modules/idealab-presentation/scripts/validate-defense-spec.mjs --input "答辩内容.json"
+node modules/idealab-presentation/scripts/build-idealab-presentation.mjs --input "答辩内容.json" --inventory "姓名-项目简称-答辩素材盘点.json" --output "06 答辩ppt"
 ```
 
 扫描结果只能提供候选，AI必须查看文档、图片画面和视频关键帧后再请用户确认。确认后先把每个检查项的 `needs-review` 改为 `present`、`missing` 或 `not-applicable`；实际使用的文件还要把 `review_status` 改为 `approved` 并核对 `origin`。新生成的示意图加入盘点 `items`，标记 `origin: ai` 与 `review_status: approved`。最后再把盘点 JSON 的 `review.confirmed` 与答辩内容的 `plan_confirmed` 设为 `true`。生成器会核对两份文件来自同一个学生档案，并逐项确认所有引用图片；不会联网，也不会自行制造证据素材。

@@ -80,9 +80,9 @@ description: Use ideaLab Student as the single student-facing entry for project 
 
 ## 成果答辩PPT与讲解训练
 
-学生表达要准备最后答辩、成果展示或最终PPT时，直接识别意图，不要求使用固定句式。先运行 `node scripts/manage-bundled-skills.mjs check defense-presentation`，然后完整读取 `modules/defense-presentation/SKILL.md` 并按该模块执行。
+学生表达要准备最后答辩、成果展示或最终PPT时，直接识别意图，不要求使用固定句式。先运行 `node scripts/manage-bundled-skills.mjs check idealab-presentation`，然后完整读取 `modules/idealab-presentation/SKILL.md` 并按该模块执行。
 
-答辩模块负责素材盘点、项目逻辑重建、动态页面、离线HTML、逐页参考稿和交互练习页。学生仍然只与 `idealab-student-skills` 对话，不要求他说出 `defense-presentation`。旧的 `references/d7-presentation-coach.md` 只作为兼容参考，不再作为最终答辩的主流程。
+答辩模块负责素材盘点、项目逻辑重建、动态页面、离线HTML、逐页参考稿和交互练习页。学生仍然只与 `idealab-student-skills` 对话，不要求他说出 `idealab-presentation`。旧的 `references/d7-presentation-coach.md` 只作为兼容参考，不再作为最终答辩的主流程。
 
 ## 课堂演示生成器
 
@@ -90,9 +90,9 @@ description: Use ideaLab Student as the single student-facing entry for project 
 
 1. D3先读取 `references/d3-visual-preparation.md` 和 `references/d3-visual-schema.json`，准备三张图；完成后再按 `references/classroom-deck-schema.json` 形成受控的演示JSON。
 2. D3严格使用 `D3-01` 至 `D3-06`，继续使用现有课堂演示生成器。
-3. 最终答辩不再固定十页；交给内置 `defense-presentation` 按素材和逻辑动态安排。
+3. 最终答辩不再固定十页；交给内置 `idealab-presentation` 按素材和逻辑动态安排。
 4. D3运行 `node scripts/validate-classroom-deck.mjs --input "演示内容.json"`，通过后运行 `node scripts/build-classroom-deck.mjs --input "演示内容.json" --output "目标答辩目录"`。
-5. 最终答辩先运行模块内 `scan-defense-materials.mjs`，向学生或老师确认盘点方案，再校验并运行 `build-defense-presentation.mjs`。
+5. 最终答辩先运行模块内 `scan-defense-materials.mjs`，向学生或老师确认盘点方案，再校验并运行 `build-idealab-presentation.mjs`。
 6. 打开生成的HTML逐页检查；确认无断图、重叠、溢出和素材漏用后，再让学生练习讲解。
 
 ## 内置专项 Skill
@@ -103,7 +103,7 @@ description: Use ideaLab Student as the single student-facing entry for project 
 node scripts/manage-bundled-skills.mjs check
 ```
 
-仓库当前内置 `defense-presentation`。更新 `idealab-student-skills` 后，内置模块会一起更新，不需要学生单独搜索、下载或记住模块名称。以后新增专项能力时，继续登记到注册表并由本 Skill 自动路由；没有通过老师审核和版本固定的在线 Skill 不在课堂现场临时安装。
+仓库当前内置 `idealab-presentation`。更新 `idealab-student-skills` 后，内置模块会一起更新，不需要学生单独搜索、下载或记住模块名称。以后新增专项能力时，继续登记到注册表并由本 Skill 自动路由；没有通过老师审核和版本固定的在线 Skill 不在课堂现场临时安装。
 
 ## 第一次建档
 

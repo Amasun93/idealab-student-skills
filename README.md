@@ -60,7 +60,7 @@ AI 会先寻找现有的 `学生项目档案.json`。找到后继续使用原档
 
 ### 成果答辩训练
 
-- 最后一天由内置 `defense-presentation` 模块先盘点本地材料，再让老师或学生确认使用方案。
+- 最后一天由内置 `idealab-presentation` 模块先盘点本地材料，再让老师或学生确认使用方案。
 - 始终保持“问题—现有方案—不足—本项目功能—创新—实验”的推导链，页面数量按项目材料动态变化。
 - 缺少原型、制作或实验照片时显示“待补”占位，AI示意图不能冒充真实证据。
 - 默认输出离线答辩HTML、逐页参考稿、素材盘点和独立交互练习页；姓名和项目简称会进入封面与文件名。
@@ -70,7 +70,7 @@ AI 会先寻找现有的 `学生项目档案.json`。找到后继续使用原档
 - `idealab-student-skills` 是学生唯一入口，学生无需记住其他 Skill 名称。
 - `references/skill-registry.json` 记录随主 Skill 一起更新的专项模块。
 - 运行 `node scripts/manage-bundled-skills.mjs check` 可以检查全部内置模块是否完整。
-- 当前首个模块是 `modules/defense-presentation`；后续模块继续通过同一入口扩展。
+- 当前首个模块是 `modules/idealab-presentation`；后续模块继续通过同一入口扩展。
 
 ### 项目归档
 

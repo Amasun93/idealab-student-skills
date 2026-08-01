@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildMaterialInventory, validateDefenseSpec } from "../modules/defense-presentation/scripts/defense-core.mjs";
-import { build } from "../modules/defense-presentation/scripts/build-defense-presentation.mjs";
+import { buildMaterialInventory, validateDefenseSpec } from "../modules/idealab-presentation/scripts/defense-core.mjs";
+import { build } from "../modules/idealab-presentation/scripts/build-idealab-presentation.mjs";
 
 function fakePng(filePath, marker = 1) {
   const content = Buffer.alloc(32, marker);
@@ -131,4 +131,4 @@ try {
   fs.rmSync(directory, { recursive: true, force: true });
 }
 
-console.log("defense presentation tests passed");
+console.log("idealab presentation tests passed");

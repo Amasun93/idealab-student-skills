@@ -9,17 +9,17 @@ import { inspectBundledSkills, loadRegistry, runCli } from "../scripts/manage-bu
 function createFixture(overrides = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "idealab-skill-registry-"));
   fs.mkdirSync(path.join(root, "references"), { recursive: true });
-  fs.mkdirSync(path.join(root, "modules", "defense-presentation"), { recursive: true });
-  fs.writeFileSync(path.join(root, "modules", "defense-presentation", "SKILL.md"), "# Defense\n");
+  fs.mkdirSync(path.join(root, "modules", "idealab-presentation"), { recursive: true });
+  fs.writeFileSync(path.join(root, "modules", "idealab-presentation", "SKILL.md"), "# Defense\n");
   const registry = {
     schema_version: 1,
     bundle_id: "idealab-student-skills",
     bundle_name: "ideaLab Student",
     skills: [{
-      id: "defense-presentation",
-      name: "答辩演示",
-      description: "生成答辩演示。",
-      path: "modules/defense-presentation",
+      id: "idealab-presentation",
+      name: "演讲与答辩",
+      description: "生成演讲答辩演示。",
+      path: "modules/idealab-presentation",
       entrypoint: "SKILL.md",
       required: true
     }],
@@ -36,19 +36,19 @@ test("loads a valid registry and locates its bundled module", (t) => {
   const report = inspectBundledSkills(root);
   assert.deepEqual(report.errors, []);
   assert.equal(report.skills.length, 1);
-  assert.equal(report.skills[0].id, "defense-presentation");
+  assert.equal(report.skills[0].id, "idealab-presentation");
   assert.equal(report.skills[0].available, true);
 });
 
 test("reports a missing module entrypoint without trying to download it", (t) => {
   const root = createFixture();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  fs.rmSync(path.join(root, "modules", "defense-presentation", "SKILL.md"));
+  fs.rmSync(path.join(root, "modules", "idealab-presentation", "SKILL.md"));
 
   const report = inspectBundledSkills(root);
   assert.equal(report.skills[0].available, false);
   assert.match(report.skills[0].problems.join(" "), /入口文件不存在/);
-  assert.equal(runCli(["check", "defense-presentation", "--json"], root), 1);
+  assert.equal(runCli(["check", "idealab-presentation", "--json"], root), 1);
 });
 
 test("rejects module paths that escape the repository", (t) => {

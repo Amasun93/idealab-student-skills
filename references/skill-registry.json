@@ -5,10 +5,10 @@
   "description": "学生只需从 ideaLab Student 进入，即可使用仓库内置的专项 Skill。",
   "skills": [
     {
-      "id": "defense-presentation",
-      "name": "答辩演示",
-      "description": "盘点项目素材，生成答辩演示、逐页参考稿和交互式答辩练习。",
-      "path": "modules/defense-presentation",
+      "id": "idealab-presentation",
+      "name": "演讲与答辩",
+      "description": "盘点项目素材，生成演讲答辩演示、逐页参考稿和交互练习。",
+      "path": "modules/idealab-presentation",
       "entrypoint": "SKILL.md",
       "required": true
     }
