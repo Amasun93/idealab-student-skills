@@ -76,7 +76,7 @@
       "maxItems": 3,
       "items": {
         "type": "object",
-        "required": ["name", "source_ref", "strength", "limitation", "project_advantage"],
+        "required": ["name", "strength", "limitation", "project_advantage"],
         "properties": {
           "name": { "type": "string" },
           "source_ref": { "type": "string", "minLength": 1 },

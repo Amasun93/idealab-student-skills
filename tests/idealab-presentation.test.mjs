@@ -48,7 +48,7 @@ function validSpec(directory, gradeBand = "middle") {
     plan_confirmed: true,
     meta: { student_name: "测试学生", project_title: "AI智慧交互导览书架", project_short_name: "智慧书架", grade_band: gradeBand, core_problem: "读者找书和归位效率低", archive_root: "." },
     slides,
-    existing_solutions: [{ name: "分类标签", source_ref: "测试夹具中的现有方案记录", solution: "按类别标识书架", strength: "成本低，容易理解", limitation: "不能指出具体仓位，也不能在错放时反馈", project_advantage: "用识别和亮灯给出即时、具体的位置反馈" }],
+    existing_solutions: [{ name: "分类标签", solution: "按类别标识书架", strength: "成本低，容易理解", limitation: "不能指出具体仓位，也不能在错放时反馈", project_advantage: "用识别和亮灯给出即时、具体的位置反馈" }],
     experiments: gradeBand === "primary"
       ? [{ type: "functional", status: "planned", purpose: "检查亮灯是否正确", method: "连续放入多本测试书并记录" }]
       : gradeBand === "middle"
@@ -139,7 +139,7 @@ try {
   const built = build({ input: inputPath, inventory: inventoryPath, output });
   for (const value of [built.presentation, built.script, built.practice, built.inventory, built.spec]) assert.equal(fs.existsSync(value), true);
   const html = fs.readFileSync(built.presentation, "utf8");
-  assert.ok(html.includes("AI生成示意图"));
+  assert.equal(html.includes("AI生成示意图"), false);
   assert.ok(html.includes("测试学生"));
   assert.ok(html.includes("智慧书架"));
   assert.ok(html.includes("current-state-media"));

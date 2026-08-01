@@ -283,7 +283,7 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
   if (existingSolutions.length > 3) errors.push("existing_solutions最多3项；只保留最具代表性的方案");
   for (const [index, item] of existingSolutions.entries()) {
     checkText(errors, item?.name, `existing_solutions[${index}].name`, true);
-    checkText(errors, item?.source_ref, `existing_solutions[${index}].source_ref`, true);
+    checkText(errors, item?.source_ref, `existing_solutions[${index}].source_ref`);
     checkText(errors, item?.strength, `existing_solutions[${index}].strength`, true);
     checkText(errors, item?.limitation, `existing_solutions[${index}].limitation`, true);
     checkText(errors, item?.project_advantage, `existing_solutions[${index}].project_advantage`, true);
