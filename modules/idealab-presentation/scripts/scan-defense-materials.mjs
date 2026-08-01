@@ -40,7 +40,7 @@ export function inventoryMarkdown(inventory) {
     "",
     "## 可用但需确认",
     "",
-    ...(needsReview.length ? needsReview.map((item) => `- ${item.label}：找到 ${item.count} 个候选文件。AI需查看内容、画面或关键帧后，再由老师或学生确认用途。`) : ["- 暂无待确认候选。"]),
+    ...(needsReview.length ? needsReview.map((item) => `- ${item.label}：找到 ${item.count} 个候选文件。AI需查看内容、画面或预览视频后，再由老师或学生确认用途。`) : ["- 暂无待确认候选。"]),
     "",
     "## 缺失待补",
     "",
@@ -63,9 +63,9 @@ export function inventoryMarkdown(inventory) {
     "",
     "## 文件明细",
     "",
-    "| 类别 | 文件 | 大小 |",
-    "|---|---|---:|",
-    ...inventory.items.map((item) => `| ${item.category} | ${item.relative_path.replaceAll("|", "\\|")} | ${item.size} |`),
+    "| 类别 | 文件 | 视频身份 | 大小 |",
+    "|---|---|---|---:|",
+    ...inventory.items.map((item) => `| ${item.category} | ${item.relative_path.replaceAll("|", "\\|")} | ${item.video_role ?? "-"} | ${item.size} |`),
     ""
   ];
   return lines.join("\n");

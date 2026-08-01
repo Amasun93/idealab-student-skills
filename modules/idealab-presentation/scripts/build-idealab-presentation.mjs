@@ -25,21 +25,41 @@ function bundlePaths(directory, prefix) {
     ["inventory", `${prefix}-答辩素材盘点`, ".md"]
   ];
   let version = 1;
-  while (outputs.some(([, stem, extension]) => fs.existsSync(path.join(directory, `${stem}${version === 1 ? "" : `-v${version}`}${extension}`)))) version += 1;
-  return Object.fromEntries(outputs.map(([key, stem, extension]) => [key, path.join(directory, `${stem}${version === 1 ? "" : `-v${version}`}${extension}`)]));
+  const suffix = () => version === 1 ? "" : `-v${version}`;
+  while (
+    outputs.some(([, stem, extension]) => fs.existsSync(path.join(directory, `${stem}${suffix()}${extension}`)))
+    || fs.existsSync(path.join(directory, `${prefix}-答辩演示${suffix()}-媒体`))
+  ) version += 1;
+  return {
+    ...Object.fromEntries(outputs.map(([key, stem, extension]) => [key, path.join(directory, `${stem}${suffix()}${extension}`)])),
+    media: path.join(directory, `${prefix}-答辩演示${suffix()}-媒体`)
+  };
 }
 
-function mime(filePath) {
+function imageMime(filePath) {
   return ({ ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".svg": "image/svg+xml" })[path.extname(filePath).toLowerCase()] ?? "application/octet-stream";
 }
 
-function embedImages(spec, inputDirectory) {
+function prepareMedia(spec, inputDirectory, outputDirectory, mediaDirectory) {
   const embedded = structuredClone(spec);
   for (const slide of embedded.slides) {
     for (const image of slide.images ?? []) {
       if (!["present", "generated"].includes(image.status) || /^data:image\//i.test(image.src ?? "")) continue;
       const absolute = path.resolve(inputDirectory, image.src);
-      image.src = `data:${mime(absolute)};base64,${fs.readFileSync(absolute).toString("base64")}`;
+      image.src = `data:${imageMime(absolute)};base64,${fs.readFileSync(absolute).toString("base64")}`;
+    }
+  }
+  let videoIndex = 0;
+  for (const slide of embedded.slides) {
+    for (const video of slide.videos ?? []) {
+      if (video.status !== "present") continue;
+      const absolute = path.resolve(inputDirectory, video.src);
+      fs.mkdirSync(mediaDirectory, { recursive: true });
+      const parsed = path.parse(absolute);
+      const fileName = `${String(++videoIndex).padStart(2, "0")}-${safeName(parsed.name)}${parsed.ext.toLowerCase()}`;
+      const destination = path.join(mediaDirectory, fileName);
+      fs.copyFileSync(absolute, destination);
+      video.src = path.relative(outputDirectory, destination).split(path.sep).join("/");
     }
   }
   return embedded;
@@ -93,6 +113,16 @@ export function build(options) {
         throw new Error(`${slide.section}页面使用了真实素材，但素材盘点对应检查项尚未标记present`);
       }
     }
+    for (const video of slide.videos ?? []) {
+      if (video.status !== "present") continue;
+      const absolute = path.resolve(inputDirectory, video.src);
+      const relative = path.relative(specArchiveRoot, absolute).split(path.sep).join("/").toLowerCase();
+      const item = inventoryItems.get(relative);
+      if (!item || item.review_status !== "approved") throw new Error(`视频未在素材盘点中逐项确认: ${video.src}`);
+      if (item.origin === "ai") throw new Error(`学生演示视频不能标记为AI生成素材: ${video.src}`);
+      if (item.video_role !== "student-demo") throw new Error(`视频必须在素材盘点中确认并标记video_role=student-demo: ${video.src}`);
+      if (checkByCategory.get("video")?.status !== "present") throw new Error("使用学生演示视频前，素材盘点中的video检查项必须标记为present");
+    }
   }
   fs.mkdirSync(outputDirectory, { recursive: true });
   const moduleRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -105,14 +135,14 @@ export function build(options) {
   const practicePath = outputPaths.practice;
   const specPath = outputPaths.spec;
   const inventoryPath = outputPaths.inventory;
-  const embedded = embedImages(spec, inputDirectory);
+  const embedded = prepareMedia(spec, inputDirectory, outputDirectory, outputPaths.media);
   const safeJson = JSON.stringify(embedded).replaceAll("<", "\\u003c");
   fs.writeFileSync(htmlPath, presentationTemplate.replace("__DEFENSE_DATA__", safeJson), "utf8");
   fs.writeFileSync(practicePath, practiceTemplate.replace("__PRACTICE_DATA__", safeJson), "utf8");
   fs.writeFileSync(scriptPath, `${scriptMarkdown(spec)}\n`, "utf8");
   fs.writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`, "utf8");
   fs.writeFileSync(inventoryPath, `${inventoryMarkdown(inventory)}\n`, "utf8");
-  return { presentation: htmlPath, script: scriptPath, practice: practicePath, inventory: inventoryPath, spec: specPath, slides: spec.slides.length, questions: spec.qa.length };
+  return { presentation: htmlPath, script: scriptPath, practice: practicePath, inventory: inventoryPath, spec: specPath, media_directory: fs.existsSync(outputPaths.media) ? outputPaths.media : null, slides: spec.slides.length, questions: spec.qa.length };
 }
 
 export function run(values = process.argv.slice(2)) {

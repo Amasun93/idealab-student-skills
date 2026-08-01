@@ -9,6 +9,7 @@ export const MATERIAL_STATES = new Set(["present", "missing", "generated", "not-
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"]);
 const VIDEO_EXTENSIONS = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm"]);
+const BROWSER_VIDEO_EXTENSIONS = new Set([".mp4", ".mov", ".webm"]);
 const DOCUMENT_EXTENSIONS = new Set([".pdf", ".doc", ".docx", ".ppt", ".pptx", ".md", ".txt", ".xlsx", ".csv"]);
 
 export function isMedia(filePath) {
@@ -18,6 +19,17 @@ export function isMedia(filePath) {
 
 export function isImage(filePath) {
   return IMAGE_EXTENSIONS.has(path.extname(filePath).toLowerCase());
+}
+
+export function isVideo(filePath) {
+  return VIDEO_EXTENSIONS.has(path.extname(filePath).toLowerCase());
+}
+
+export function inferVideoRole(filePath) {
+  const normalized = toPosix(filePath).toLowerCase();
+  if (includesAny(normalized, ["学生演示", "学生版", "学生讲解", "学生展示", "student-demo", "student demo"])) return "student-demo";
+  if (includesAny(normalized, ["老师演示", "教师演示", "老师版", "教师版", "老师讲解", "教师讲解", "teacher-demo", "teacher demo"])) return "teacher-reference";
+  return "needs-review";
 }
 
 function isInside(root, candidate) {
@@ -37,8 +49,34 @@ export function isValidImageFile(filePath) {
   return false;
 }
 
+export function isValidVideoFile(filePath) {
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile() || !BROWSER_VIDEO_EXTENSIONS.has(path.extname(filePath).toLowerCase())) return false;
+  const extension = path.extname(filePath).toLowerCase();
+  const buffer = Buffer.alloc(32);
+  const handle = fs.openSync(filePath, "r");
+  let bytesRead = 0;
+  try {
+    bytesRead = fs.readSync(handle, buffer, 0, buffer.length, 0);
+  } finally {
+    fs.closeSync(handle);
+  }
+  const header = buffer.subarray(0, bytesRead);
+  if ([".mp4", ".mov"].includes(extension)) return header.length >= 12 && header.subarray(4, 8).toString("ascii") === "ftyp";
+  if (extension === ".webm") return header.length >= 4 && header.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+  return false;
+}
+
 export function sha256(filePath) {
-  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+  const hash = crypto.createHash("sha256");
+  const buffer = Buffer.alloc(1024 * 1024);
+  const handle = fs.openSync(filePath, "r");
+  try {
+    let bytesRead = 0;
+    while ((bytesRead = fs.readSync(handle, buffer, 0, buffer.length, null)) > 0) hash.update(buffer.subarray(0, bytesRead));
+  } finally {
+    fs.closeSync(handle);
+  }
+  return hash.digest("hex");
 }
 
 export function toPosix(value) {
@@ -97,6 +135,8 @@ export function buildMaterialInventory(root) {
       relative_path: relative,
       category: classifyArchiveFile(relative),
       media: isMedia(absolute),
+      media_kind: isImage(absolute) ? "image" : isVideo(absolute) ? "video" : "other",
+      ...(isVideo(absolute) ? { video_role: inferVideoRole(relative) } : {}),
       origin: "unknown",
       review_status: "unreviewed",
       size: stat.size,
@@ -109,7 +149,7 @@ export function buildMaterialInventory(root) {
   }, {});
   const evidenceCandidates = (category) => (byCategory[category] ?? []).filter((item) => {
     const extension = path.extname(item.relative_path).toLowerCase();
-    if (["making", "prototype"].includes(category)) return IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension);
+    if (["making", "prototype"].includes(category)) return IMAGE_EXTENSIONS.has(extension);
     if (category === "experiment") return IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension) || DOCUMENT_EXTENSIONS.has(extension);
     if (category === "opening-book") return IMAGE_EXTENSIONS.has(extension) || DOCUMENT_EXTENSIONS.has(extension);
     return true;
@@ -118,7 +158,7 @@ export function buildMaterialInventory(root) {
     ["opening-book", "开题书或项目说明"],
     ["drawing", "概念图、流程图或硬件框图"],
     ["making", "制作过程照片"],
-    ["prototype", "真实原型照片或确认过的视频截图"],
+    ["prototype", "真实原型照片"],
     ["experiment", "实验记录、照片或数据"]
   ].map(([category, label]) => {
     const candidates = evidenceCandidates(category);
@@ -126,6 +166,15 @@ export function buildMaterialInventory(root) {
   });
   const researchCandidates = evidenceCandidates("research");
   const optionalResearch = { category: "research", label: "问卷、访谈或观察记录（可选）", status: researchCandidates.length ? "needs-review" : "not-applicable", count: researchCandidates.length };
+  const videoCandidates = items.filter((item) => item.media_kind === "video" && item.video_role !== "teacher-reference");
+  const teacherVideos = items.filter((item) => item.media_kind === "video" && item.video_role === "teacher-reference");
+  const optionalVideo = {
+    category: "video",
+    label: "学生演示视频（原视频直接播放）",
+    status: videoCandidates.length ? "needs-review" : teacherVideos.length ? "missing" : "not-applicable",
+    count: videoCandidates.length,
+    teacher_reference_count: teacherVideos.length
+  };
   return {
     schema_version: 1,
     archive_root: absoluteRoot,
@@ -134,7 +183,7 @@ export function buildMaterialInventory(root) {
     review: { confirmed: false, confirmed_at: null, confirmed_by: null },
     items,
     categories: Object.fromEntries(Object.entries(byCategory).map(([key, value]) => [key, value.length])),
-    checks: [...required, optionalResearch]
+    checks: [...required, optionalResearch, optionalVideo]
   };
 }
 
@@ -172,6 +221,7 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     if (slide?.section) sections.add(slide.section);
     if (slide?.source_refs !== undefined && !Array.isArray(slide.source_refs)) errors.push(`${label}.source_refs必须是数组`);
     if (slide?.images !== undefined && !Array.isArray(slide.images)) errors.push(`${label}.images必须是数组`);
+    if (slide?.videos !== undefined && !Array.isArray(slide.videos)) errors.push(`${label}.videos必须是数组`);
     if (slide?.bullets !== undefined && !Array.isArray(slide.bullets)) errors.push(`${label}.bullets必须是数组`);
     const bullets = Array.isArray(slide?.bullets) ? slide.bullets : [];
     if (bullets.length > 5) errors.push(`${label}.bullets最多5条`);
@@ -200,7 +250,27 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
         errors.push(`${imageLabel}不能用AI生成图充当${slide.section}证据`);
       }
     }
-    if (EVIDENCE_SECTIONS.has(slide?.section) && !images.length) {
+    const videos = Array.isArray(slide?.videos) ? slide.videos : [];
+    if (videos.length > 1) errors.push(`${label}.videos最多1个；同一页只展示一个学生演示视频`);
+    for (const [videoIndex, video] of videos.entries()) {
+      const videoLabel = `${label}.videos[${videoIndex}]`;
+      if (!["present", "missing", "not-applicable"].includes(video?.status)) errors.push(`${videoLabel}.status无效；视频不能标记为AI生成`);
+      checkText(errors, video?.label, `${videoLabel}.label`, true);
+      if (video?.status === "present") {
+        checkText(errors, video?.src, `${videoLabel}.src`, true);
+        if (video?.role !== "student-demo") errors.push(`${videoLabel}.role必须是student-demo；老师演示版只能作理解参考，不能进入学生答辩`);
+        const absolute = path.resolve(baseDirectory, video?.src ?? "");
+        if (archiveRoot && video?.src && !isInside(archiveRoot, absolute)) errors.push(`${videoLabel}必须位于当前学生档案内: ${video.src}`);
+        if (archiveRootReal && fs.existsSync(absolute) && !isInside(archiveRootReal, fs.realpathSync(absolute))) errors.push(`${videoLabel}不能通过链接读取学生档案外文件: ${video.src}`);
+        if (video?.src && !isValidVideoFile(absolute)) errors.push(`${videoLabel}必须是浏览器可直接播放的有效MP4、MOV或WEBM视频: ${video.src}`);
+        if (inferVideoRole(video?.src ?? "") === "teacher-reference") errors.push(`${videoLabel}检测为老师演示版，不能进入学生答辩: ${video.src}`);
+      }
+      if (video?.status === "missing") {
+        checkText(errors, video?.needed, `${videoLabel}.needed`, true);
+        checkText(errors, video?.requested_from, `${videoLabel}.requested_from`, true);
+      }
+    }
+    if (EVIDENCE_SECTIONS.has(slide?.section) && !images.length && !videos.length) {
       errors.push(`${label}属于证据页面，必须提供真实素材或missing占位`);
     }
   }

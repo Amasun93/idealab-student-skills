@@ -14,6 +14,15 @@ function fakePng(filePath, marker = 1) {
   fs.writeFileSync(filePath, content);
 }
 
+function fakeMp4(filePath, marker = 1) {
+  const content = Buffer.alloc(64, marker);
+  content.writeUInt32BE(24, 0);
+  content.write("ftyp", 4, "ascii");
+  content.write("isom", 8, "ascii");
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content);
+}
+
 function image(status, src, label, extra = {}) {
   return { status, src, label, caption: label, ...extra };
 }
@@ -22,14 +31,15 @@ function validSpec(directory, gradeBand = "middle") {
   const cover = path.join(directory, "cover.png");
   const prototype = path.join(directory, "prototype.png");
   const experiment = path.join(directory, "experiment.png");
-  fakePng(cover, 1); fakePng(prototype, 2); fakePng(experiment, 3);
+  const studentVideo = path.join(directory, "学生演示版.mp4");
+  fakePng(cover, 1); fakePng(prototype, 2); fakePng(experiment, 3); fakeMp4(studentVideo, 4);
   const slides = [
     { section: "cover", title: "图书馆智慧导览书架", summary: "让找书和归位更清楚", logic_link: "从生活问题开始", images: [image("generated", "cover.png", "封面背景")], notes: "大家好，我是测试学生。" },
     { section: "problem", title: "找不到和放不回去，会同时影响读者与馆员", summary: "书架信息与人的动作没有及时对应。", logic_link: "明确核心问题", bullets: ["读者找书慢", "错放后下一位更难找"], notes: "先从生活里的找书经历讲起。" },
     { section: "current-state", title: "现有办法能提示分类，但反馈仍不够具体", logic_link: "找到现有方案不足", notes: "比较代表性方案。" },
     { section: "goal", title: "把一次找书和归位变成清楚的即时引导", logic_link: "确定唯一核心目标", notes: "我们的目标不是增加功能数量。" },
     { section: "solution", title: "识别、匹配与亮灯共同回应核心问题", logic_link: "功能对应问题", bullets: ["NFC识别书本", "仓位匹配", "灯光反馈"], notes: "沿着输入、判断、输出讲。" },
-    { section: "prototype", title: "原型已经呈现主要交互结构", logic_link: "展示真实装置状态", images: [image("present", "prototype.png", "原型照片")], notes: "说明实物中的主要结构。" },
+    { section: "prototype", title: "原型已经呈现主要交互结构", logic_link: "展示真实装置状态", images: [image("present", "prototype.png", "原型照片")], videos: [{ status: "present", src: "学生演示版.mp4", role: "student-demo", label: "学生演示视频", caption: "学生完成一次完整操作" }], notes: "说明实物中的主要结构，再点击播放学生演示视频。" },
     { section: "experiment", title: "实验验证识别与引导是否达到目标", logic_link: "用证据回到核心目标", images: [image("present", "experiment.png", "实验记录")], notes: "说明测试方法和结果。" },
     { section: "summary", title: "用更具体的反馈改善找书与归位", logic_link: "总结亮点和下一步", notes: "最后回到最初的问题。" }
   ];
@@ -69,6 +79,12 @@ try {
   outsideArchive.slides.find((slide) => slide.section === "experiment").images[0].src = path.resolve(directory, "..", "outside.png");
   assert.ok(validateDefenseSpec(outsideArchive, directory).errors.some((error) => error.includes("当前学生档案内")));
 
+  const teacherVideoPath = path.join(directory, "老师演示版.mp4");
+  fakeMp4(teacherVideoPath, 5);
+  const teacherVideo = structuredClone(complete);
+  teacherVideo.slides.find((slide) => slide.section === "prototype").videos[0].src = "老师演示版.mp4";
+  assert.ok(validateDefenseSpec(teacherVideo, directory).errors.some((error) => error.includes("老师演示版")));
+
   const malformed = structuredClone(complete);
   malformed.slides = {};
   assert.doesNotThrow(() => validateDefenseSpec(malformed, directory));
@@ -103,6 +119,14 @@ try {
   assert.equal(fakeInventory.checks.find((item) => item.category === "prototype").status, "missing");
   assert.equal(fakeInventory.checks.find((item) => item.category === "experiment").status, "missing");
 
+  const videoArchive = path.join(directory, "video-archive");
+  fakeMp4(path.join(videoArchive, "学生演示版.mp4"), 6);
+  fakeMp4(path.join(videoArchive, "老师演示版.mp4"), 7);
+  const videoInventory = buildMaterialInventory(videoArchive);
+  assert.equal(videoInventory.items.find((item) => item.relative_path === "学生演示版.mp4").video_role, "student-demo");
+  assert.equal(videoInventory.items.find((item) => item.relative_path === "老师演示版.mp4").video_role, "teacher-reference");
+  assert.equal(videoInventory.checks.find((item) => item.category === "video").count, 1);
+
   const inputPath = path.join(directory, "spec.json");
   const output = path.join(directory, "output");
   fs.writeFileSync(inputPath, JSON.stringify(complete));
@@ -119,6 +143,11 @@ try {
   assert.ok(html.includes("测试学生"));
   assert.ok(html.includes("智慧书架"));
   assert.ok(html.includes("current-state-media"));
+  assert.ok(html.includes("点击播放学生演示"));
+  assert.ok(html.includes("答辩演示-媒体/01-学生演示版.mp4"));
+  assert.equal(html.includes("data:video"), false);
+  assert.equal(fs.existsSync(built.media_directory), true);
+  assert.equal(fs.existsSync(path.join(built.media_directory, "01-学生演示版.mp4")), true);
   const practice = fs.readFileSync(built.practice, "utf8");
   assert.ok(practice.includes("查看参考回答"));
   assert.ok(practice.includes("已经会了"));

@@ -49,6 +49,23 @@
                 "requested_from": { "type": "string" }
               }
             }
+          },
+          "videos": {
+            "type": "array",
+            "maxItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["status", "label"],
+              "properties": {
+                "status": { "enum": ["present", "missing", "not-applicable"] },
+                "src": { "type": "string" },
+                "role": { "const": "student-demo" },
+                "label": { "type": "string", "minLength": 1 },
+                "caption": { "type": "string" },
+                "needed": { "type": "string" },
+                "requested_from": { "type": "string" }
+              }
+            }
           }
         }
       }

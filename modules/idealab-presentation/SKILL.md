@@ -55,7 +55,9 @@ description: 基于学生本地项目档案生成项目答辩演示、逐页参�
 
 ### 2. 盘点全部本地材料
 
-扫描学生档案中的开题书、手册、图纸、代码、关键图片、视频、日志、已有PPT和实验记录。查看文件内容、图片画面和视频关键帧，不只按文件名判断。
+扫描学生档案中的开题书、手册、图纸、代码、关键图片、视频、日志、已有PPT和实验记录。查看文件内容、图片画面并预览视频内容，不只按文件名判断。
+
+视频要单独区分“学生演示版”和“老师/教师参考版”。最终答辩只选择学生本人操作、讲解或展示作品的视频；老师版仅用于帮助理解项目，不能嵌入学生答辩。无法判断人物身份时先询问老师或学生，不得猜测。没有学生演示版时建立“待补拍学生演示视频”占位，不得用老师版替代。
 
 按 [materials-and-evidence.md](references/materials-and-evidence.md) 生成素材盘点，至少分为：
 
@@ -100,14 +102,17 @@ node modules/idealab-presentation/scripts/validate-defense-spec.mjs --input "答
 node modules/idealab-presentation/scripts/build-idealab-presentation.mjs --input "答辩内容.json" --inventory "姓名-项目简称-答辩素材盘点.json" --output "06 答辩ppt"
 ```
 
-扫描结果只能提供候选，AI必须查看文档、图片画面和视频关键帧后再请用户确认。确认后先把每个检查项的 `needs-review` 改为 `present`、`missing` 或 `not-applicable`；实际使用的文件还要把 `review_status` 改为 `approved` 并核对 `origin`。新生成的示意图加入盘点 `items`，标记 `origin: ai` 与 `review_status: approved`。最后再把盘点 JSON 的 `review.confirmed` 与答辩内容的 `plan_confirmed` 设为 `true`。生成器会核对两份文件来自同一个学生档案，并逐项确认所有引用图片；不会联网，也不会自行制造证据素材。
+扫描结果只能提供候选，AI必须查看文档、图片画面并预览视频内容后再请用户确认。确认后先把每个检查项的 `needs-review` 改为 `present`、`missing` 或 `not-applicable`；实际使用的文件还要把 `review_status` 改为 `approved` 并核对 `origin`。选中的学生视频必须把 `video_role` 确认为 `student-demo`；老师参考视频保持 `teacher-reference`，不得选入。新生成的示意图加入盘点 `items`，标记 `origin: ai` 与 `review_status: approved`。最后再把盘点 JSON 的 `review.confirmed` 与答辩内容的 `plan_confirmed` 设为 `true`。生成器会核对两份文件来自同一个学生档案，并逐项确认所有引用图片和视频；不会联网，也不会自行制造证据素材。
 
 内容要求：
 
 - 封面使用契合项目主题的全幅背景图，标题和学生信息用HTML/PPT文字叠加；背景图内不要生成中文文字，不放 ideaLab logo。
 - 正文使用简洁的“标题 + 精炼文字 + 图片/图表”结构，保证投屏可读。
 - 现有方案必须围绕项目痛点比较；不足要自然引出本项目优势和创新。
+- 现有方案图片按“本地已有截图 → 无需登录的百度图片/官网/公开产品页 → AI方案原理或对比示意图”选择。淘宝要求登录时立即跳过，不让学生登录或提供账号；AI图必须标注为示意，不能伪装成真实商品截图。
 - 本地原型、过程和实验素材缺失时显示明确占位，写清要补的画面，不用AI假图替代。
+- 学生演示视频使用 `videos` 字段，保留原视频并在HTML中显示播放器，点击即可播放；不要截成关键帧代替视频。每页最多一个视频，优先放在原型或功能演示页。
+- 老师或教师演示视频只作项目理解参考，不进入最终答辩。若学生版缺失，显示待补占位。
 - 生成的插图标注“AI生成示意图”或“概念示意”，避免与真实证据混淆。
 - 已选择的素材必须全部实际显示；不能因版式容量不足而静默丢弃。
 
@@ -132,6 +137,7 @@ node modules/idealab-presentation/scripts/build-idealab-presentation.mjs --input
 {姓名}-{项目简称}-答辩演示.html
 {姓名}-{项目简称}-答辩逐页参考稿.md
 {姓名}-{项目简称}-答辩练习.html
+{姓名}-{项目简称}-答辩演示-媒体/      # 选择学生演示视频时生成
 {姓名}-{项目简称}-答辩PPTX.pptx   # 仅在用户选择时
 ```
 
@@ -142,6 +148,7 @@ node modules/idealab-presentation/scripts/build-idealab-presentation.mjs --input
 - 姓名和项目简称正确，且出现在演示封面和文件名中。
 - 因果链完整，现有方案不足确实引出本项目亮点。
 - 页面没有文字溢出、图片变形、重叠、断图或选中素材丢失。
+- 学生演示视频能在HTML中点击播放，媒体目录与HTML放在一起；页面没有误用老师演示版。
 - 所有真实/生成/缺失内容均正确标记。
 - 实验结论与学生确认的材料一致，深度符合年龄段。
 - 逐页参考稿与演示页一一对应，练习页折叠和进度交互可用。
