@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { safeName, validateDefenseSpec } from "./defense-core.mjs";
+import { normalizeDefenseSpec, safeName, validateDefenseSpec } from "./defense-core.mjs";
 import { inventoryMarkdown } from "./scan-defense-materials.mjs";
 
 function args(values) {
@@ -87,7 +87,7 @@ export function build(options) {
   const inputPath = path.resolve(options.input);
   const inputDirectory = path.dirname(inputPath);
   const outputDirectory = path.resolve(options.output);
-  const spec = JSON.parse(fs.readFileSync(inputPath, "utf8"));
+  const spec = normalizeDefenseSpec(JSON.parse(fs.readFileSync(inputPath, "utf8")));
   const inventoryPathInput = path.resolve(options.inventory);
   const inventory = JSON.parse(fs.readFileSync(inventoryPathInput, "utf8"));
   if (inventory?.schema_version !== 1 || inventory?.review?.confirmed !== true) throw new Error("素材盘点尚未确认；请先查看候选文件并将review.confirmed设为true");

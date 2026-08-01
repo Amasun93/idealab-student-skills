@@ -6,6 +6,26 @@ export const GRADE_BANDS = new Set(["primary", "middle", "high"]);
 export const EVIDENCE_SECTIONS = new Set(["making", "prototype", "experiment"]);
 export const REQUIRED_SECTIONS = ["cover", "problem", "current-state", "goal", "solution", "experiment", "summary"];
 export const MATERIAL_STATES = new Set(["present", "missing", "generated", "not-applicable"]);
+export const SECTION_ALIASES = Object.freeze({
+  background: "problem",
+  context: "problem",
+  "existing-solutions": "current-state",
+  existing_solutions: "current-state",
+  market: "current-state",
+  objective: "goal",
+  objectives: "goal",
+  target: "goal",
+  method: "solution",
+  methods: "solution",
+  approach: "solution",
+  testing: "experiment",
+  results: "experiment",
+  validation: "experiment",
+  conclusion: "summary",
+  conclusions: "summary"
+});
+
+const KNOWN_SECTIONS = new Set(["cover", "problem", "current-state", "research", "goal", "solution", "principle", "diagrams", "making", "prototype", "experiment", "summary"]);
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"]);
 const VIDEO_EXTENSIONS = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm"]);
@@ -30,6 +50,20 @@ export function inferVideoRole(filePath) {
   if (includesAny(normalized, ["学生演示", "学生版", "学生讲解", "学生展示", "student-demo", "student demo"])) return "student-demo";
   if (includesAny(normalized, ["老师演示", "教师演示", "老师版", "教师版", "老师讲解", "教师讲解", "teacher-demo", "teacher demo"])) return "teacher-reference";
   return "needs-review";
+}
+
+export function canonicalSection(value) {
+  const normalized = String(value ?? "").trim().toLowerCase().replaceAll(" ", "-");
+  return SECTION_ALIASES[normalized] ?? normalized;
+}
+
+export function normalizeDefenseSpec(spec) {
+  if (!spec || typeof spec !== "object" || Array.isArray(spec)) return spec;
+  const normalized = structuredClone(spec);
+  if (Array.isArray(normalized.slides)) {
+    normalized.slides = normalized.slides.map((slide) => ({ ...slide, section: canonicalSection(slide?.section) }));
+  }
+  return normalized;
 }
 
 function isInside(root, candidate) {
@@ -91,6 +125,7 @@ function includesAny(value, terms) {
 export function classifyArchiveFile(relativePath) {
   const normalized = toPosix(relativePath);
   const extension = path.extname(normalized).toLowerCase();
+  if (extension === ".mp") return "code";
   if (normalized.startsWith("01 ") || normalized.includes("/01 ")) return "opening-book";
   if (normalized.startsWith("02 ") || normalized.includes("/02 ")) return "handbook";
   if (normalized.startsWith("03 ") || normalized.includes("/03 ")) return "drawing";
@@ -137,6 +172,7 @@ export function buildMaterialInventory(root) {
       media: isMedia(absolute),
       media_kind: isImage(absolute) ? "image" : isVideo(absolute) ? "video" : "other",
       ...(isVideo(absolute) ? { video_role: inferVideoRole(relative) } : {}),
+      ...(path.extname(relative).toLowerCase() === ".mp" ? { package_kind: "mindplus-project" } : {}),
       origin: "unknown",
       review_status: "unreviewed",
       size: stat.size,
@@ -216,9 +252,14 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     checkText(errors, slide?.section, `${label}.section`, true);
     checkText(errors, slide?.title, `${label}.title`, true);
     checkText(errors, slide?.notes, `${label}.notes`, true);
-    if (typeof slide?.title === "string" && slide.title.length > 42) errors.push(`${label}.title超过42字`);
+    const rawSection = slide?.section;
+    const section = canonicalSection(rawSection);
+    if (typeof rawSection === "string" && rawSection.trim() && section !== rawSection.trim().toLowerCase()) warnings.push(`${label}.section已自动映射：${rawSection} → ${section}`);
+    if (section && !KNOWN_SECTIONS.has(section)) errors.push(`${label}.section不支持“${rawSection}”；可使用cover、problem、current-state、goal、solution、making、prototype、experiment或summary`);
+    if (typeof slide?.title === "string" && slide.title.length > 52) errors.push(`${label}.title当前${slide.title.length}字，超过52字；请缩短标题或拆页`);
+    else if (typeof slide?.title === "string" && slide.title.length > 30) warnings.push(`${label}.title当前${slide.title.length}字，生成器会自动缩小标题；建议压缩到30字以内`);
     if (typeof slide?.summary === "string" && slide.summary.length > 180) errors.push(`${label}.summary超过180字`);
-    if (slide?.section) sections.add(slide.section);
+    if (section) sections.add(section);
     if (slide?.source_refs !== undefined && !Array.isArray(slide.source_refs)) errors.push(`${label}.source_refs必须是数组`);
     if (slide?.images !== undefined && !Array.isArray(slide.images)) errors.push(`${label}.images必须是数组`);
     if (slide?.videos !== undefined && !Array.isArray(slide.videos)) errors.push(`${label}.videos必须是数组`);
@@ -227,7 +268,13 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     if (bullets.length > 5) errors.push(`${label}.bullets最多5条`);
     bullets.forEach((value, bulletIndex) => {
       checkText(errors, value, `${label}.bullets[${bulletIndex}]`, true);
-      if (typeof value === "string" && value.length > 80) errors.push(`${label}.bullets[${bulletIndex}]超过80字`);
+      if (typeof value === "string") {
+        const parameterLine = /(?:[A-Z][A-Z0-9_]{2,}\s*=)|(?:d[XYZ]\s*[≈=])/i.test(value);
+        const hardLimit = parameterLine ? 120 : 100;
+        const warningLimit = meta.grade_band === "primary" ? 56 : 72;
+        if (value.length > hardLimit) errors.push(`${label}.bullets[${bulletIndex}]当前${value.length}字，超过${hardLimit}字；请拆成两条或把解释移到逐页参考稿`);
+        else if (value.length > warningLimit) warnings.push(`${label}.bullets[${bulletIndex}]当前${value.length}字，投屏时偏长；建议只保留结论和关键词`);
+      }
     });
     const images = Array.isArray(slide?.images) ? slide.images : [];
     if (images.length > 4) errors.push(`${label}.images最多4张；更多素材请拆页`);
@@ -246,8 +293,8 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
         checkText(errors, image?.needed, `${imageLabel}.needed`, true);
         checkText(errors, image?.requested_from, `${imageLabel}.requested_from`, true);
       }
-      if (EVIDENCE_SECTIONS.has(slide.section) && image?.status === "generated") {
-        errors.push(`${imageLabel}不能用AI生成图充当${slide.section}证据`);
+      if (EVIDENCE_SECTIONS.has(section) && image?.status === "generated") {
+        errors.push(`${imageLabel}不能用AI生成图充当${section}证据`);
       }
     }
     const videos = Array.isArray(slide?.videos) ? slide.videos : [];
@@ -270,12 +317,13 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
         checkText(errors, video?.requested_from, `${videoLabel}.requested_from`, true);
       }
     }
-    if (EVIDENCE_SECTIONS.has(slide?.section) && !images.length && !videos.length) {
+    if (EVIDENCE_SECTIONS.has(section) && !images.length && !videos.length) {
       errors.push(`${label}属于证据页面，必须提供真实素材或missing占位`);
     }
+    if (meta.grade_band === "primary" && bullets.length > 4 && section !== "goal") warnings.push(`${label}面向小学生但有${bullets.length}条正文；建议保留3–4条，其余移入参考稿`);
   }
   for (const section of REQUIRED_SECTIONS) if (!sections.has(section)) errors.push(`缺少必要章节: ${section}`);
-  if (sections.has("research") && !slides.find((slide) => slide.section === "research")?.source_refs?.length) {
+  if (sections.has("research") && !slides.find((slide) => canonicalSection(slide.section) === "research")?.source_refs?.length) {
     errors.push("调研页只有在存在材料时才保留，并必须填写source_refs");
   }
   const existingSolutions = Array.isArray(spec.existing_solutions) ? spec.existing_solutions : [];
@@ -288,6 +336,10 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     checkText(errors, item?.limitation, `existing_solutions[${index}].limitation`, true);
     checkText(errors, item?.project_advantage, `existing_solutions[${index}].project_advantage`, true);
   }
+  const currentState = slides.find((slide) => canonicalSection(slide?.section) === "current-state");
+  const currentStateImages = (Array.isArray(currentState?.images) ? currentState.images : []).filter((item) => ["present", "generated"].includes(item?.status));
+  if (currentState && currentStateImages.length === 0) errors.push("现有方案页缺少视觉素材：请生成1张包含全部方案的对比图，或为每个现有方案各准备1张图片");
+  else if (currentState && currentStateImages.length > 1 && currentStateImages.length < existingSolutions.length) errors.push(`现有方案有${existingSolutions.length}项，但只有${currentStateImages.length}张图片；请改为1张完整对比图，或补齐到每项1张`);
   const experiments = Array.isArray(spec.experiments) ? spec.experiments : [];
   if (!experiments.length) errors.push("experiments至少需要一项");
   const effectiveness = experiments.filter((item) => item.type === "effectiveness").length;
