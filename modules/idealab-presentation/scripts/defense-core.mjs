@@ -264,6 +264,19 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     if (slide?.images !== undefined && !Array.isArray(slide.images)) errors.push(`${label}.images必须是数组`);
     if (slide?.videos !== undefined && !Array.isArray(slide.videos)) errors.push(`${label}.videos必须是数组`);
     if (slide?.bullets !== undefined && !Array.isArray(slide.bullets)) errors.push(`${label}.bullets必须是数组`);
+    if (section === "goal") {
+      checkText(errors, slide?.goal_statement, `${label}.goal_statement`, true);
+      if (!Array.isArray(slide?.goal_pairs)) errors.push(`${label}.goal_pairs必须是2–4组“问题—功能”对应关系`);
+      else {
+        if (slide.goal_pairs.length < 2 || slide.goal_pairs.length > 4) errors.push(`${label}.goal_pairs必须有2–4组对应关系`);
+        slide.goal_pairs.forEach((pair, pairIndex) => {
+          checkText(errors, pair?.problem, `${label}.goal_pairs[${pairIndex}].problem`, true);
+          checkText(errors, pair?.function, `${label}.goal_pairs[${pairIndex}].function`, true);
+          if (typeof pair?.problem === "string" && pair.problem.length > 34) warnings.push(`${label}.goal_pairs[${pairIndex}].problem超过34字；建议保留学生能一眼看懂的关键词句`);
+          if (typeof pair?.function === "string" && pair.function.length > 42) warnings.push(`${label}.goal_pairs[${pairIndex}].function超过42字；把技术细节移到方案页`);
+        });
+      }
+    }
     const bullets = Array.isArray(slide?.bullets) ? slide.bullets : [];
     if (bullets.length > 5) errors.push(`${label}.bullets最多5条`);
     bullets.forEach((value, bulletIndex) => {

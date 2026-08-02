@@ -37,7 +37,7 @@ function validSpec(directory, gradeBand = "middle") {
     { section: "cover", title: "图书馆智慧导览书架", summary: "让找书和归位更清楚", logic_link: "从生活问题开始", images: [image("generated", "cover.png", "封面背景")], notes: "大家好，我是测试学生。" },
     { section: "problem", title: "找不到和放不回去，会同时影响读者与馆员", summary: "书架信息与人的动作没有及时对应。", logic_link: "明确核心问题", bullets: ["读者找书慢", "错放后下一位更难找"], notes: "先从生活里的找书经历讲起。" },
     { section: "current-state", title: "现有办法能提示分类，但反馈仍不够具体", logic_link: "找到现有方案不足", images: [image("generated", "cover.png", "现有方案完整对比图")], notes: "比较代表性方案。" },
-    { section: "goal", title: "把一次找书和归位变成清楚的即时引导", logic_link: "确定唯一核心目标", notes: "我们的目标不是增加功能数量。" },
+    { section: "goal", title: "把一次找书和归位变成清楚的即时引导", goal_statement: "帮助读者更快找书、正确归位，并获得即时反馈", goal_pairs: [{ problem: "只知道分类，不知道具体仓位", function: "NFC识别书本并匹配目标仓位" }, { problem: "找书和归位时缺少即时提示", function: "仓位亮灯并反馈是否放置正确" }], logic_link: "确定唯一核心目标", notes: "我们的目标不是增加功能数量。" },
     { section: "solution", title: "识别、匹配与亮灯共同回应核心问题", logic_link: "功能对应问题", bullets: ["NFC识别书本", "仓位匹配", "灯光反馈"], notes: "沿着输入、判断、输出讲。" },
     { section: "prototype", title: "原型已经呈现主要交互结构", logic_link: "展示真实装置状态", images: [image("present", "prototype.png", "原型照片")], videos: [{ status: "present", src: "学生演示版.mp4", role: "student-demo", label: "学生演示视频", caption: "学生完成一次完整操作" }], notes: "说明实物中的主要结构，再点击播放学生演示视频。" },
     { section: "experiment", title: "实验验证识别与引导是否达到目标", logic_link: "用证据回到核心目标", images: [image("present", "experiment.png", "实验记录")], notes: "说明测试方法和结果。" },
@@ -62,6 +62,10 @@ const directory = fs.mkdtempSync(path.join(os.tmpdir(), "idealab-defense-"));
 try {
   const complete = validSpec(directory);
   assert.deepEqual(validateDefenseSpec(complete, directory).errors, []);
+
+  const missingGoalPairs = structuredClone(complete);
+  delete missingGoalPairs.slides.find((slide) => slide.section === "goal").goal_pairs;
+  assert.ok(validateDefenseSpec(missingGoalPairs, directory).errors.some((error) => error.includes("goal_pairs")));
 
   const noResearch = structuredClone(complete);
   assert.equal(noResearch.slides.some((slide) => slide.section === "research"), false);
