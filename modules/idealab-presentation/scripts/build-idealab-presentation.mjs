@@ -101,6 +101,12 @@ export function build(options) {
   const inventoryItems = new Map((Array.isArray(inventory.items) ? inventory.items : []).map((item) => [String(item.relative_path ?? "").replaceAll("\\", "/").toLowerCase(), item]));
   const checkByCategory = new Map(inventory.checks.map((item) => [item.category, item]));
   for (const slide of spec.slides) {
+    for (const reference of slide.source_refs ?? []) {
+      const absolute = path.resolve(specArchiveRoot, reference);
+      const relative = path.relative(specArchiveRoot, absolute).split(path.sep).join("/").toLowerCase();
+      const item = inventoryItems.get(relative);
+      if (!item || item.review_status !== "approved") throw new Error(`页面文字来源未在当前学生素材盘点中确认: ${reference}`);
+    }
     for (const image of slide.images ?? []) {
       if (!["present", "generated"].includes(image.status)) continue;
       const absolute = path.resolve(inputDirectory, image.src);
@@ -122,6 +128,14 @@ export function build(options) {
       if (item.origin === "ai") throw new Error(`学生演示视频不能标记为AI生成素材: ${video.src}`);
       if (item.video_role !== "student-demo") throw new Error(`视频必须在素材盘点中确认并标记video_role=student-demo: ${video.src}`);
       if (checkByCategory.get("video")?.status !== "present") throw new Error("使用学生演示视频前，素材盘点中的video检查项必须标记为present");
+    }
+  }
+  for (const question of spec.qa ?? []) {
+    for (const reference of question.source_refs ?? []) {
+      const absolute = path.resolve(specArchiveRoot, reference);
+      const relative = path.relative(specArchiveRoot, absolute).split(path.sep).join("/").toLowerCase();
+      const item = inventoryItems.get(relative);
+      if (!item || item.review_status !== "approved") throw new Error(`答辩练习答案来源未在当前学生素材盘点中确认: ${reference}`);
     }
   }
   fs.mkdirSync(outputDirectory, { recursive: true });

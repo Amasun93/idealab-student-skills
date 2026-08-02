@@ -6,6 +6,35 @@ export const GRADE_BANDS = new Set(["primary", "middle", "high"]);
 export const EVIDENCE_SECTIONS = new Set(["making", "prototype", "experiment"]);
 export const REQUIRED_SECTIONS = ["cover", "problem", "current-state", "goal", "solution", "experiment", "summary"];
 export const MATERIAL_STATES = new Set(["present", "missing", "generated", "not-applicable"]);
+export const TEMPLATE_LAYOUTS = new Set([
+  "cover-visual",
+  "problem-two-scenes",
+  "research-grid",
+  "current-state-three",
+  "goal-pairs",
+  "principle-two-visuals",
+  "solution-three-diagrams",
+  "making-grid",
+  "prototype-hero",
+  "experiment-overview",
+  "experiment-detail",
+  "summary-evidence"
+]);
+export const IMAGE_ROLES = new Set([
+  "cover-background",
+  "problem-scene",
+  "research-evidence",
+  "current-solution",
+  "principle-visual",
+  "concept-diagram",
+  "hardware-diagram",
+  "flow-diagram",
+  "making-step",
+  "prototype-hero",
+  "experiment-process",
+  "experiment-data",
+  "summary-evidence"
+]);
 export const SECTION_ALIASES = Object.freeze({
   background: "problem",
   context: "problem",
@@ -26,6 +55,46 @@ export const SECTION_ALIASES = Object.freeze({
 });
 
 const KNOWN_SECTIONS = new Set(["cover", "problem", "current-state", "research", "goal", "solution", "principle", "diagrams", "making", "prototype", "experiment", "summary"]);
+const PROVENANCE_REQUIRED_SECTIONS = new Set(["problem", "research", "goal", "solution", "principle", "diagrams", "making", "prototype", "experiment", "summary"]);
+const SECTION_LAYOUTS = Object.freeze({
+  cover: ["cover-visual"],
+  problem: ["problem-two-scenes"],
+  research: ["research-grid"],
+  "current-state": ["current-state-three"],
+  goal: ["goal-pairs"],
+  principle: ["principle-two-visuals"],
+  diagrams: ["solution-three-diagrams"],
+  solution: ["solution-three-diagrams"],
+  making: ["making-grid"],
+  prototype: ["prototype-hero"],
+  experiment: ["experiment-overview", "experiment-detail"],
+  summary: ["summary-evidence"]
+});
+const DEFAULT_LAYOUTS = Object.freeze({
+  cover: "cover-visual",
+  problem: "problem-two-scenes",
+  research: "research-grid",
+  "current-state": "current-state-three",
+  goal: "goal-pairs",
+  principle: "principle-two-visuals",
+  diagrams: "solution-three-diagrams",
+  solution: "solution-three-diagrams",
+  making: "making-grid",
+  prototype: "prototype-hero",
+  summary: "summary-evidence"
+});
+const LAYOUT_IMAGE_ROLES = Object.freeze({
+  "cover-visual": ["cover-background"],
+  "problem-two-scenes": ["problem-scene", "problem-scene"],
+  "research-grid": ["research-evidence"],
+  "current-state-three": ["current-solution", "current-solution", "current-solution"],
+  "principle-two-visuals": ["principle-visual", "principle-visual"],
+  "solution-three-diagrams": ["concept-diagram", "hardware-diagram", "flow-diagram"],
+  "making-grid": ["making-step"],
+  "prototype-hero": ["prototype-hero"],
+  "experiment-detail": ["experiment-process", "experiment-data"],
+  "summary-evidence": ["summary-evidence"]
+});
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"]);
 const VIDEO_EXTENSIONS = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm"]);
@@ -57,11 +126,23 @@ export function canonicalSection(value) {
   return SECTION_ALIASES[normalized] ?? normalized;
 }
 
+export function defaultTemplateLayout(section, title = "") {
+  const canonical = canonicalSection(section);
+  if (canonical === "experiment") return /实验设计|验证计划|测试计划/.test(String(title)) ? "experiment-overview" : "experiment-detail";
+  return DEFAULT_LAYOUTS[canonical];
+}
+
 export function normalizeDefenseSpec(spec) {
   if (!spec || typeof spec !== "object" || Array.isArray(spec)) return spec;
   const normalized = structuredClone(spec);
   if (Array.isArray(normalized.slides)) {
-    normalized.slides = normalized.slides.map((slide) => ({ ...slide, section: canonicalSection(slide?.section) }));
+    normalized.slides = normalized.slides.map((slide) => {
+      const section = canonicalSection(slide?.section);
+      const templateLayout = slide?.template_layout || defaultTemplateLayout(section, slide?.title);
+      const roles = LAYOUT_IMAGE_ROLES[templateLayout] ?? [];
+      const images = Array.isArray(slide?.images) ? slide.images.map((image, index) => ({ ...image, role: image?.role || roles[Math.min(index, roles.length - 1)] })) : slide?.images;
+      return { ...slide, section, template_layout: templateLayout, ...(images ? { images } : {}) };
+    });
   }
   return normalized;
 }
@@ -254,13 +335,28 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     checkText(errors, slide?.notes, `${label}.notes`, true);
     const rawSection = slide?.section;
     const section = canonicalSection(rawSection);
+    const templateLayout = slide?.template_layout || defaultTemplateLayout(section, slide?.title);
     if (typeof rawSection === "string" && rawSection.trim() && section !== rawSection.trim().toLowerCase()) warnings.push(`${label}.section已自动映射：${rawSection} → ${section}`);
     if (section && !KNOWN_SECTIONS.has(section)) errors.push(`${label}.section不支持“${rawSection}”；可使用cover、problem、current-state、goal、solution、making、prototype、experiment或summary`);
+    if (!TEMPLATE_LAYOUTS.has(templateLayout)) errors.push(`${label}.template_layout无效或无法从章节推断`);
+    else if (section && !(SECTION_LAYOUTS[section] ?? []).includes(templateLayout)) errors.push(`${label}.template_layout“${templateLayout}”不适用于${section}章节`);
     if (typeof slide?.title === "string" && slide.title.length > 52) errors.push(`${label}.title当前${slide.title.length}字，超过52字；请缩短标题或拆页`);
     else if (typeof slide?.title === "string" && slide.title.length > 30) warnings.push(`${label}.title当前${slide.title.length}字，生成器会自动缩小标题；建议压缩到30字以内`);
     if (typeof slide?.summary === "string" && slide.summary.length > 180) errors.push(`${label}.summary超过180字`);
     if (section) sections.add(section);
     if (slide?.source_refs !== undefined && !Array.isArray(slide.source_refs)) errors.push(`${label}.source_refs必须是数组`);
+    const sourceRefs = Array.isArray(slide?.source_refs) ? slide.source_refs : [];
+    if (PROVENANCE_REQUIRED_SECTIONS.has(section) && sourceRefs.length === 0) errors.push(`${label}.source_refs不能为空；正文只能使用当前学生档案中的项目材料`);
+    sourceRefs.forEach((reference, referenceIndex) => {
+      const refLabel = `${label}.source_refs[${referenceIndex}]`;
+      checkText(errors, reference, refLabel, true);
+      if (archiveRoot && typeof reference === "string" && reference.trim()) {
+        const absolute = path.resolve(archiveRoot, reference);
+        if (!isInside(archiveRoot, absolute)) errors.push(`${refLabel}越过当前学生档案边界: ${reference}`);
+        else if (!fs.existsSync(absolute) || !fs.statSync(absolute).isFile()) errors.push(`${refLabel}在当前学生档案中不存在: ${reference}`);
+        else if (archiveRootReal && !isInside(archiveRootReal, fs.realpathSync(absolute))) errors.push(`${refLabel}不能通过链接读取其他项目: ${reference}`);
+      }
+    });
     if (slide?.images !== undefined && !Array.isArray(slide.images)) errors.push(`${label}.images必须是数组`);
     if (slide?.videos !== undefined && !Array.isArray(slide.videos)) errors.push(`${label}.videos必须是数组`);
     if (slide?.bullets !== undefined && !Array.isArray(slide.bullets)) errors.push(`${label}.bullets必须是数组`);
@@ -290,10 +386,11 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
       }
     });
     const images = Array.isArray(slide?.images) ? slide.images : [];
-    if (images.length > 4) errors.push(`${label}.images最多4张；更多素材请拆页`);
+    if (images.length > 7) errors.push(`${label}.images最多7张；更多素材请拆页`);
     for (const [imageIndex, image] of images.entries()) {
       const imageLabel = `${label}.images[${imageIndex}]`;
       if (!MATERIAL_STATES.has(image?.status)) errors.push(`${imageLabel}.status无效`);
+      if (!IMAGE_ROLES.has(image?.role)) errors.push(`${imageLabel}.role无效；必须按工程模板指定图片位置`);
       checkText(errors, image?.label, `${imageLabel}.label`, true);
       if (image?.status === "present" || image?.status === "generated") {
         checkText(errors, image?.src, `${imageLabel}.src`, true);
@@ -333,6 +430,26 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     if (EVIDENCE_SECTIONS.has(section) && !images.length && !videos.length) {
       errors.push(`${label}属于证据页面，必须提供真实素材或missing占位`);
     }
+    const usableImages = images.filter((image) => ["present", "generated"].includes(image?.status));
+    const missingOnly = images.length > 0 && images.every((image) => image?.status === "missing");
+    if (templateLayout === "problem-two-scenes" && (images.length !== 2 || usableImages.length !== 2 || images.some((image) => image.role !== "problem-scene"))) errors.push(`${label}问题由来页必须提供2张problem-scene场景图，可使用本地图片或AI生成图`);
+    if (templateLayout === "research-grid" && (images.length < 4 || images.length > 6 || images.some((image) => image.role !== "research-evidence"))) errors.push(`${label}调研访谈页必须使用4–6张research-evidence材料；材料不足时应删除该可选页`);
+    if (templateLayout === "current-state-three" && (images.length !== 3 || usableImages.length !== 3 || images.some((image) => image.role !== "current-solution"))) errors.push(`${label}现有方案页必须为3个方案分别提供1张current-solution图片`);
+    if (templateLayout === "principle-two-visuals" && (images.length !== 2 || images.some((image) => image.role !== "principle-visual"))) errors.push(`${label}技术原理页必须使用2个principle-visual图位`);
+    if (templateLayout === "solution-three-diagrams") {
+      const roles = new Set(images.map((image) => image.role));
+      if (images.length !== 3 || usableImages.length !== 3 || !["concept-diagram", "hardware-diagram", "flow-diagram"].every((role) => roles.has(role))) errors.push(`${label}解决方案页必须各有1张概念图、硬件框图和流程图；这些说明图可基于确认事实生成`);
+    }
+    if (templateLayout === "making-grid" && !(missingOnly && images.length === 1) && (images.length < 3 || images.length > 7 || images.some((image) => image.role !== "making-step"))) errors.push(`${label}实现过程页有真实素材时应使用3–7张making-step照片；完全缺失时只保留1个明确待补区`);
+    if (templateLayout === "prototype-hero" && images.some((image) => image.role !== "prototype-hero")) errors.push(`${label}原型页图片必须使用prototype-hero角色`);
+    if (templateLayout === "experiment-detail") {
+      const roles = new Set(images.map((image) => image.role));
+      if (images.length !== 2 || !["experiment-process", "experiment-data"].every((role) => roles.has(role))) errors.push(`${label}单项实验页必须保留实验过程和实验数据两个图位；没有记录时分别标记待补`);
+      checkText(errors, slide?.experiment_purpose, `${label}.experiment_purpose`, true);
+      checkText(errors, slide?.experiment_method, `${label}.experiment_method`, true);
+      checkText(errors, slide?.experiment_conclusion, `${label}.experiment_conclusion`, true);
+    }
+    if (templateLayout === "summary-evidence" && (images.length !== 1 || images[0]?.role !== "summary-evidence")) errors.push(`${label}总结页必须保留1个summary-evidence项目素材图位，可用真实素材或待补占位`);
     if (meta.grade_band === "primary" && bullets.length > 4 && section !== "goal") warnings.push(`${label}面向小学生但有${bullets.length}条正文；建议保留3–4条，其余移入参考稿`);
   }
   for (const section of REQUIRED_SECTIONS) if (!sections.has(section)) errors.push(`缺少必要章节: ${section}`);
@@ -340,8 +457,7 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
     errors.push("调研页只有在存在材料时才保留，并必须填写source_refs");
   }
   const existingSolutions = Array.isArray(spec.existing_solutions) ? spec.existing_solutions : [];
-  if (!existingSolutions.length) errors.push("existing_solutions至少需要一项代表性现有方案");
-  if (existingSolutions.length > 3) errors.push("existing_solutions最多3项；只保留最具代表性的方案");
+  if (existingSolutions.length !== 3) errors.push("existing_solutions必须正好3项，并与模板中的三个图片区域一一对应");
   for (const [index, item] of existingSolutions.entries()) {
     checkText(errors, item?.name, `existing_solutions[${index}].name`, true);
     checkText(errors, item?.source_ref, `existing_solutions[${index}].source_ref`);
@@ -351,8 +467,7 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
   }
   const currentState = slides.find((slide) => canonicalSection(slide?.section) === "current-state");
   const currentStateImages = (Array.isArray(currentState?.images) ? currentState.images : []).filter((item) => ["present", "generated"].includes(item?.status));
-  if (currentState && currentStateImages.length === 0) errors.push("现有方案页缺少视觉素材：请生成1张包含全部方案的对比图，或为每个现有方案各准备1张图片");
-  else if (currentState && currentStateImages.length > 1 && currentStateImages.length < existingSolutions.length) errors.push(`现有方案有${existingSolutions.length}项，但只有${currentStateImages.length}张图片；请改为1张完整对比图，或补齐到每项1张`);
+  if (currentState && currentStateImages.length !== 3) errors.push("现有方案页必须有3张分别对应三个方案的图片；不能只放一张总览图或让两个方案没有图片");
   const experiments = Array.isArray(spec.experiments) ? spec.experiments : [];
   if (!experiments.length) errors.push("experiments至少需要一项");
   const effectiveness = experiments.filter((item) => item.type === "effectiveness").length;
@@ -370,6 +485,18 @@ export function validateDefenseSpec(spec, baseDirectory = process.cwd()) {
   for (const [index, item] of questions.entries()) {
     checkText(errors, item?.question, `qa[${index}].question`, true);
     checkText(errors, item?.answer, `qa[${index}].answer`, true);
+    const sourceRefs = Array.isArray(item?.source_refs) ? item.source_refs : [];
+    if (!sourceRefs.length) errors.push(`qa[${index}].source_refs不能为空；参考回答只能依据当前学生档案`);
+    sourceRefs.forEach((reference, referenceIndex) => {
+      const refLabel = `qa[${index}].source_refs[${referenceIndex}]`;
+      checkText(errors, reference, refLabel, true);
+      if (archiveRoot && typeof reference === "string" && reference.trim()) {
+        const absolute = path.resolve(archiveRoot, reference);
+        if (!isInside(archiveRoot, absolute)) errors.push(`${refLabel}越过当前学生档案边界: ${reference}`);
+        else if (!fs.existsSync(absolute) || !fs.statSync(absolute).isFile()) errors.push(`${refLabel}在当前学生档案中不存在: ${reference}`);
+        else if (archiveRootReal && !isInside(archiveRootReal, fs.realpathSync(absolute))) errors.push(`${refLabel}不能通过链接读取其他项目: ${reference}`);
+      }
+    });
   }
   return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
 }

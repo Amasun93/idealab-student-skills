@@ -82,6 +82,8 @@ description: Use ideaLab Student as the single student-facing entry for project 
 
 学生表达要准备最后答辩、成果展示或最终PPT时，直接识别意图，不要求使用固定句式。先运行 `node scripts/manage-bundled-skills.mjs check idealab-presentation`，然后完整读取 `modules/idealab-presentation/SKILL.md` 并按该模块执行。
 
+进入成果答辩后，以当前学生档案目录作为唯一项目事实范围。不要再读取其他学生的 `references/project-card-*.json`、示例项目、测试数据或上一位学生的答辩内容；当前档案中的旧答辩也只能作为素材线索，文字必须回到当前档案内的开题书、手册、代码、图纸和实验记录核对。不同项目之间不得复用姓名、功能、元器件、图片、实验和结论。
+
 答辩模块负责素材盘点、项目逻辑重建、动态页面、离线HTML、逐页参考稿和交互练习页。学生仍然只与 `idealab-student-skills` 对话，不要求他说出 `idealab-presentation`。旧的 `references/d7-presentation-coach.md` 只作为兼容参考，不再作为最终答辩的主流程。
 
 ## 课堂演示生成器
